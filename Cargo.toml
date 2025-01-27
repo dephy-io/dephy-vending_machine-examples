@@ -1,0 +1,23 @@
+[workspace]
+resolver = "2"
+members = [
+    "balance-payment-sdk",
+    "examples/*",
+]
+
+[workspace.package]
+license = "MIT"
+
+[patch.crates-io]
+solana-client = { version = "2.1.11", git = "https://github.com/dephy-io/agave.git", branch = "v2.1.11-p1" }
+solana-program = { version = "2.1.11", git = "https://github.com/dephy-io/agave.git", branch = "v2.1.11-p1" }
+solana-sdk = { version = "2.1.11", git = "https://github.com/dephy-io/agave.git", branch = "v2.1.11-p1" }
+solana-zk-token-sdk = { version = "2.1.11", git = "https://github.com/dephy-io/agave.git", branch = "v2.1.11-p1" }
+solana-account = { version = "2.1.11", git = "https://github.com/dephy-io/agave.git", branch = "v2.1.11-p1" }
+solana-instruction = { version = "2.1.11", git = "https://github.com/dephy-io/agave.git", branch = "v2.1.11-p1" }
+solana-account-decoder = { version = "2.1.11", git = "https://github.com/dephy-io/agave.git", branch = "v2.1.11-p1" }
+solana-account-decoder-client-types = { version = "2.1.11", git = "https://github.com/dephy-io/agave.git", branch = "v2.1.11-p1" }
+solana-config-program = { version = "2.1.11", git = "https://github.com/dephy-io/agave.git", branch = "v2.1.11-p1" }
+solana-pubkey = { version = "2.1.11", git = "https://github.com/dephy-io/agave.git", branch = "v2.1.11-p1" }
+solana-program-error = { version = "2.1.11", git = "https://github.com/dephy-io/agave.git", branch = "v2.1.11-p1" }
+solana-program-memory = { version = "2.1.11", git = "https://github.com/dephy-io/agave.git", branch = "v2.1.11-p1" }
