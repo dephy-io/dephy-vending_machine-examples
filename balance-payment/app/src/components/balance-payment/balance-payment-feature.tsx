@@ -1,7 +1,7 @@
 import { useWallet } from '@solana/wallet-adapter-react'
 import { WalletButton } from '../solana/solana-provider'
 import { useBalancePaymentProgram } from './balance-payment-data-access'
-import { useEffect, useState, useRef } from 'react' 
+import { useEffect, useState, useRef } from 'react'
 import { BN } from '@coral-xyz/anchor'
 import keccak from 'keccak'
 import { useTransactionToast } from '../ui/ui-layout'
@@ -34,10 +34,10 @@ export default function BalancePaymentFeature() {
   )
   const [relay, setRelay] = useState<Relay>()
   const [sk, setSk] = useState<Uint8Array | null>(null)
-  const [chargeStatus, setChargeStatus] = useState<ChargeStatus>('idle') 
-  const [events, setEvents] = useState<any[]>([]) 
-  const [expandedEventIndex, setExpandedEventIndex] = useState<number | null>(null) 
-  const [isChargeDisabled, setIsChargeDisabled] = useState(false) 
+  const [chargeStatus, setChargeStatus] = useState<ChargeStatus>('idle')
+  const [events, setEvents] = useState<any[]>([])
+  const [expandedEventIndex, setExpandedEventIndex] = useState<number | null>(null)
+  const [isChargeDisabled, setIsChargeDisabled] = useState(false)
 
   const subscriptionRef = useRef<any>(null)
 
@@ -196,7 +196,7 @@ export default function BalancePaymentFeature() {
       return
     }
 
-    setIsChargeDisabled(true) // 禁用 Charge 按钮
+    setIsChargeDisabled(true)
 
     const userAccountPubkey = getUserAccountPubkey(publicKey)
     const user = await program.account.userAccount.fetch(userAccountPubkey)
@@ -216,7 +216,7 @@ export default function BalancePaymentFeature() {
       recoverInfo = {
         signature: Array.from(signature),
         payload: Array.from(payload),
-        deadline,
+        deadline: deadline.toNumber(),
       }
       setRecoverInfo(recoverInfo)
     } catch (error) {
@@ -256,7 +256,7 @@ export default function BalancePaymentFeature() {
     }
 
     const payload = JSON.stringify({
-      recover_info: Buffer.from(JSON.stringify(recoverInfo)).toString('base64'),
+      recover_info: JSON.stringify(recoverInfo),
       nonce,
       user,
     })
@@ -320,20 +320,19 @@ export default function BalancePaymentFeature() {
           try {
             const content = JSON.parse(event.content)
             if (content.Request) {
-              setChargeStatus('requested') 
+              setChargeStatus('requested')
             } else if (content.Status) {
               if (content.Status.status === 'Working') {
-                setChargeStatus('working') 
+                setChargeStatus('working')
               } else if (content.Status.status === 'Available') {
-                setChargeStatus('available') 
+                setChargeStatus('available')
                 setIsChargeDisabled(false)
               }
             }
-            // 将 event 添加到 events 数组中
             setEvents((prevEvents) => [...prevEvents, event])
           } catch (error) {
             console.error('Error parsing event content:', error)
-            setChargeStatus('error') // 解析失败，状态为 error
+            setChargeStatus('error')
             setEvents((prevEvents) => [...prevEvents, { error: 'Failed to parse event content', rawEvent: event }])
           }
         },
@@ -358,7 +357,7 @@ export default function BalancePaymentFeature() {
     setRecoverInfo(null)
     setEvents([])
     setChargeStatus('idle')
-    setIsChargeDisabled(false) 
+    setIsChargeDisabled(false)
   }
 
   const ProgressBar = () => {
@@ -370,27 +369,27 @@ export default function BalancePaymentFeature() {
       case 'requested':
         progress = 33
         statusText = 'Requested - Waiting for charging station...'
-        barColor = 'bg-blue-500' 
+        barColor = 'bg-blue-500'
         break
       case 'working':
         progress = 66
         statusText = 'Working - Charging in progress...'
-        barColor = 'bg-blue-500' 
+        barColor = 'bg-blue-500'
         break
       case 'available':
         progress = 100
         statusText = 'Available - Charging completed!'
-        barColor = 'bg-green-500' 
+        barColor = 'bg-green-500'
         break
       case 'error':
         progress = 100
         statusText = 'Error - Something went wrong!'
-        barColor = 'bg-red-500' 
+        barColor = 'bg-red-500'
         break
       default:
         progress = 0
         statusText = 'Idle - Ready to charge'
-        barColor = 'bg-gray-300' 
+        barColor = 'bg-gray-300'
     }
 
     return (
@@ -408,9 +407,9 @@ export default function BalancePaymentFeature() {
 
     const toggleExpand = () => {
       if (isExpanded) {
-        setExpandedEventIndex(null) 
+        setExpandedEventIndex(null)
       } else {
-        setExpandedEventIndex(index) 
+        setExpandedEventIndex(index)
       }
     }
 

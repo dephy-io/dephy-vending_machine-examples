@@ -24,9 +24,8 @@ See https://balance-payment.pages.dev/program for the dApp
 
 ## Run from source
 
-- Deploy the Solana program, see [doc](./balance-payment/README.md)
-- Build and run the DePHY vending machine worker, see [doc](./examples/decharge-controller/README.md)
-- Run the dApp, see [doc](./balance-payment/app/README.md)
+1. [Run DePHY vending machine worker](./examples/decharge-controller/README.md)  
+2. [Deploy the Solana program and run the dApp](./balance-payment/README.md)
 
 ## TODO
 

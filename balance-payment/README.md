@@ -10,25 +10,15 @@ The program is designed to be used in conjunction with a bot and a treasury acco
 
 Before you begin, ensure you have the following installed:
 
-- [Node.js](https://nodejs.org/) (v20 or higher)
-- [Rust](https://www.rust-lang.org/tools/install)
-- [Solana CLI](https://docs.solana.com/cli/install-solana-cli-tools)
-- [Anchor CLI](https://project-serum.github.io/anchor/getting-started/installation.html)
+- [Node.js](https://nodejs.org) (v20 or higher)
+- [Bun](https://bun.sh/docs/installation)
+- [Solana & Anchor](https://solana.com/docs/intro/installation)
 
 ### Installation
 
-1. **Clone the repository:**
-
-   ```bash
-   git clone https://github.com/dephy-io/balance-payment.git
-   cd balance-payment/balance-payment
-   ```
-
-2. **Install dependencies:**
-
-   ```bash
-   npm install
-   ```
+```bash
+bun install
+```
 
 ## Compiling the Program
 
@@ -40,52 +30,45 @@ anchor build
 
 This command compiles the Solana program and generates the necessary artifacts.
 
-## Testing the Program
-
-To run the tests, use the following command:
-
-```bash
-anchor test
-```
-
 ## Deploying the Program Locally
 
 To deploy the program to a local Solana validator, follow these steps:
 
 1. **Start a local Solana validator:**
 
-   ```bash
-   solana-test-validator
-   ```
+```bash
+solana-test-validator --reset
+```
 
-   This command starts a local Solana blockchain instance.
+This command starts a local Solana blockchain instance.
 
 2. **Ensure your Solana CLI is configured to use the local validator:**
 
-   ```bash
-   solana config set --url http://localhost:8899
-   ```
+```bash
+solana config set --url http://localhost:8899
+```
 
 3. **Airdrop SOL to your local wallet:**
 
-   ```bash
-   solana airdrop 10
-   ```
+```bash
+solana airdrop 2
+solana airdrop 2 9nyhqLqmbWoUuNXA1XCVnEqiS9UWvxFYa1yynVVFzR4D
+```
 
 4. **Deploy the program to the local validator:**
 
-   ```bash
-   solana program deploy ./target/deploy/balance_payment.so --program-id ./programs/balance-payment/keypair.json
-   ```
+```bash
+solana program deploy ./target/deploy/balance_payment.so --program-id ./programs/balance-payment/keypair.json
+```
 
-   This command will deploy the program to the local Solana validator and output the program ID.
+This command will deploy the program to the local Solana validator and output the program ID.
 
 # Initialize the Program
 
 Initializes the program with an authority, treasury, and bot.
 
 ```bash
-anchor run cli -- initialize --authority <AUTHORITY_PUBKEY> --treasury <TREASURY_PUBKEY> --bot <BOT_PUBKEY>
+anchor run cli -- initialize --authority <AUTHORITY_PUBKEY> --treasury <TREASURY_PUBKEY> --bot 9nyhqLqmbWoUuNXA1XCVnEqiS9UWvxFYa1yynVVFzR4D
 ```
 
 - `--authority`: The public key of the authority.
@@ -97,17 +80,17 @@ anchor run cli -- initialize --authority <AUTHORITY_PUBKEY> --treasury <TREASURY
 The `app` folder contains a demo application that interacts with the Balance Payment program. To run the demo:
 
 - Navigate to the `app` directory:
-  ```bash
-  cd app
-  ```
+```bash
+cd app
+```
 - Install dependencies:
-  ```bash
-  npm install
-  ```
+```bash
+bun install
+```
 - Start the development server:
-  ```bash
-  npm run dev
-  ```
+```bash
+bun run dev
+```
 - Open your browser and navigate to `http://localhost:5173` to view the demo.
 
 This demo provides a user-friendly interface to interact with the Balance Payment program, enabling users to manage funds and simulate charging sessions.

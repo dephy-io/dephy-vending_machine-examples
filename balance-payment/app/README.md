@@ -4,4 +4,4 @@ Balance payment dApp
 ## Run
 
 - `bun i`
-- `bun run preview`
+- `bun run dev`
