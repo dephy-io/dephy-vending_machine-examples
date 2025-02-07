@@ -5,7 +5,7 @@ services:
       POSTGRES_USER: dephy
       POSTGRES_PASSWORD: dephy
     volumes:
-      - dephy_balance_payment_example_postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
       - ./docker-compose-postgres-init/messaging_network_migrations:/messaging_network_migrations
       - ./docker-compose-postgres-init/decharge-controller-docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
       - ./examples/decharge-controller/migrations:/decharge_controller_server_migrations
@@ -74,6 +74,6 @@ services:
       --admin-pubkey 'd041ea9854f2117b82452457c4e6d6593a96524027cd4032d2f40046deb78d93'
 
 volumes:
-  dephy_balance_payment_example_postgres_data:
+  postgres_data:
   dephy_decharge_controller_node_1_data:
   dephy_gacha_controller_data:
