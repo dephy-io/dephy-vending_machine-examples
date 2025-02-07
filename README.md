@@ -11,7 +11,7 @@ See https://balance-payment.pages.dev/program for the dApp
 
 ## How it works
 
-![](./doc/vending_machine_workflow.png)
+![](./doc/architecture.png)
 
 ## Repo contents
 
