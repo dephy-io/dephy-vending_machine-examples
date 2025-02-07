@@ -145,7 +145,7 @@ const TRANSACTION_SEND_ERROR = 101;
 const TRANSACTION_NOT_CONFIRMED = 102;
 const TRANSACTION_UNKNOWN_ERROR = 103;
 
-const SIGN_MESSAGE_PREFIX = "DePHY vending machine/DeCharge:\n";
+const SIGN_MESSAGE_PREFIX = "DePHY vending machine/Example:\n";
 
 cli.name("cli");
 

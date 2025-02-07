@@ -10,7 +10,7 @@ import { finalizeEvent, generateSecretKey } from 'nostr-tools/pure'
 import { Relay } from 'nostr-tools/relay'
 import bs58 from 'bs58';
 
-const SIGN_MESSAGE_PREFIX = "DePHY vending machine/DeCharge:\n";
+const SIGN_MESSAGE_PREFIX = "DePHY vending machine/Example:\n";
 const RELAY_ENDPOINT = import.meta.env.VITE_RELAY_ENDPOINT || 'ws://127.0.0.1:8000'
 
 // define charge status

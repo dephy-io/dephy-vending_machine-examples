@@ -7,7 +7,7 @@ import keccak from "keccak";
 import * as ed from "@noble/ed25519";
 import bs58 from 'bs58';
 
-const SIGN_MESSAGE_PREFIX = "DePHY vending machine/DeCharge:\n";
+const SIGN_MESSAGE_PREFIX = "DePHY vending machine/Example:\n";
 
 const sol = function (n: number) {
   return new BN(n * web3.LAMPORTS_PER_SOL);
