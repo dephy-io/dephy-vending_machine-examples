@@ -11,7 +11,7 @@ import bs58 from "bs58";
 import os from "os";
 import path from "path";
 
-const SIGN_MESSAGE_PREFIX = "DePHY vending machine/DeCharge:\n";
+const SIGN_MESSAGE_PREFIX = "DePHY vending machine/Example:\n";
 
 const cli = new Command();
 

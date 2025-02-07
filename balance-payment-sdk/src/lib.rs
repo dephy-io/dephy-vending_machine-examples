@@ -33,7 +33,7 @@ use solana_sdk::system_program;
 use solana_sdk::transaction::Transaction;
 use verify::verify_signature;
 
-const SIGN_MESSAGE_PREFIX: &[u8; 32] = b"DePHY vending machine/DeCharge:\n";
+const SIGN_MESSAGE_PREFIX: &[u8; 31] = b"DePHY vending machine/Example:\n";
 
 fn get_client(url: &str) -> RpcClient {
     let timeout = Duration::from_secs(10);
