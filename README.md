@@ -1,5 +1,4 @@
-DePHY vending machine examples
-====
+# DePHY vending machine examples
 
 This is a vending machine showcase for DePHY Messaging Layer.
 
@@ -7,7 +6,7 @@ This is a vending machine showcase for DePHY Messaging Layer.
 
 The program has deployed to Solana devnet, address: `GguVKxU88NUe3GLtns7Uaa6a8Pjb9USKq3WD1rjZnPS9`
 
-See https://balance-payment.pages.dev/program for the dApp
+See <https://balance-payment.pages.dev/program> for the dApp
 
 ## How it works
 
@@ -24,7 +23,7 @@ See https://balance-payment.pages.dev/program for the dApp
 
 ## Run from source
 
-1. [Run DePHY vending machine worker](./examples/decharge-controller/README.md)  
+1. Run DePHY vending machine workers by: `docker compose up`
 2. [Deploy the Solana program and run the dApp](./balance-payment/README.md)
 
 ## TODO
