@@ -92,7 +92,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         name: Upload artifacts
         with:
-          name: dephy-balance-payment-example-${{ needs.gen_version.outputs.version }}-${{ matrix.target }}
+          name: dephy-vending-machine-examples-${{ needs.gen_version.outputs.version }}-${{ matrix.target }}
           path: "*.zip"
           retention-days: 1
 
@@ -121,10 +121,10 @@ jobs:
           prerelease: ${{ needs.gen_version.outputs.version == 'prerelease' }}
           files: |
             LICENSE
-            dephy-balance-payment-example-${{ needs.gen_version.outputs.version }}-x86_64-apple-darwin/*.zip
-            dephy-balance-payment-example-${{ needs.gen_version.outputs.version }}-aarch64-apple-darwin/*.zip
-            dephy-balance-payment-example-${{ needs.gen_version.outputs.version }}-x86_64-unknown-linux-musl/*.zip
-            dephy-balance-payment-example-${{ needs.gen_version.outputs.version }}-aarch64-unknown-linux-musl/*.zip
+            dephy-vending-machine-examples-${{ needs.gen_version.outputs.version }}-x86_64-apple-darwin/*.zip
+            dephy-vending-machine-examples-${{ needs.gen_version.outputs.version }}-aarch64-apple-darwin/*.zip
+            dephy-vending-machine-examples-${{ needs.gen_version.outputs.version }}-x86_64-unknown-linux-musl/*.zip
+            dephy-vending-machine-examples-${{ needs.gen_version.outputs.version }}-aarch64-unknown-linux-musl/*.zip
 
   image:
     needs: [gen_version, build]
@@ -142,10 +142,10 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5.6.1
         with:
-          images: ${{ vars.DOCKERHUB_USERNAME }}/dephy-balance-payment-example
+          images: ${{ vars.DOCKERHUB_USERNAME }}/dephy-vending-machine-examples
       - name: Extract all released executable files
         run: |
-          for dir in dephy-balance-payment-example-${{ needs.gen_version.outputs.version }}-*/; do
+          for dir in dephy-vending-machine-examples-${{ needs.gen_version.outputs.version }}-*/; do
             for zip_file in "$dir"*.zip; do
               [ -f "$zip_file" ] && unzip "$zip_file" -d "$dir" && rm "$zip_file"
             done
@@ -155,14 +155,15 @@ jobs:
       - name: Move directory for platforms
         run: |
           mkdir linux &&
-          mv dephy-balance-payment-example-${{ needs.gen_version.outputs.version }}-x86_64-unknown-linux-musl linux/amd64 &&
-          mv dephy-balance-payment-example-${{ needs.gen_version.outputs.version }}-aarch64-unknown-linux-musl linux/arm64
+          mv dephy-vending-machine-examples-${{ needs.gen_version.outputs.version }}-x86_64-unknown-linux-musl linux/amd64 &&
+          mv dephy-vending-machine-examples-${{ needs.gen_version.outputs.version }}-aarch64-unknown-linux-musl linux/arm64
       - name: Display moved files
         run: ls -R
       - name: Build and push Docker image
         id: push
         uses: docker/build-push-action@v6.10.0
         with:
+          file: ./.github/dockerfiles/dephy-vending-machine-examples.dockerfile
           context: .
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
