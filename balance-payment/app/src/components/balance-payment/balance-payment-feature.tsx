@@ -8,9 +8,9 @@ import { useTransactionToast } from '../ui/ui-layout'
 import toast from 'react-hot-toast'
 import { finalizeEvent, generateSecretKey } from 'nostr-tools/pure'
 import { Relay } from 'nostr-tools/relay'
-import bs58 from 'bs58';
+import bs58 from 'bs58'
 
-const SIGN_MESSAGE_PREFIX = "DePHY vending machine/Example:\n";
+const SIGN_MESSAGE_PREFIX = 'DePHY vending machine/Example:\n'
 const RELAY_ENDPOINT = import.meta.env.VITE_RELAY_ENDPOINT || 'ws://127.0.0.1:8000'
 
 // define charge status
@@ -21,6 +21,7 @@ export default function BalancePaymentFeature() {
   const { publicKey, wallet, signMessage } = useWallet()
   const { program, getGlobalPubkey, getUserAccountPubkey, generate64ByteUUIDPayload } = useBalancePaymentProgram()
 
+  const [selectedTab, setSelectedTab] = useState<'decharge' | 'gacha'>('decharge')
   const [recoverInfo, setRecoverInfo] = useState<any>()
   const [serialNumberStr, setSerialNumberStr] = useState<string | null>(null)
   const [serialNumberBytes, setSerialNumberBytes] = useState<Uint8Array | null>(null)
@@ -38,14 +39,15 @@ export default function BalancePaymentFeature() {
   const [events, setEvents] = useState<any[]>([])
   const [expandedEventIndex, setExpandedEventIndex] = useState<number | null>(null)
   const [isChargeDisabled, setIsChargeDisabled] = useState(false)
+  const isTabDisabled = chargeStatus !== 'idle' && chargeStatus !== 'available'
 
   const subscriptionRef = useRef<any>(null)
 
   useEffect(() => {
-    const {uuid, uuidBytes} = generate64ByteUUIDPayload()
-    setSerialNumberStr(uuid);
+    const { uuid, uuidBytes } = generate64ByteUUIDPayload()
+    setSerialNumberStr(uuid)
     setSerialNumberBytes(uuidBytes)
-  }, [])
+  }, [selectedTab])
 
   useEffect(() => {
     if (!globalAccount) {
@@ -68,7 +70,7 @@ export default function BalancePaymentFeature() {
   }, [publicKey])
 
   useEffect(() => {
-    (async () => {
+    ;(async () => {
       const sk = generateSecretKey()
       setSk(sk)
 
@@ -171,6 +173,14 @@ export default function BalancePaymentFeature() {
     }
   }
 
+  const handleSelectTab = (tab: 'decharge' | 'gacha') => {
+    if (isTabDisabled) {
+      return
+    }
+    setSelectedTab(tab)
+    handleReset()
+  }
+
   const fetchGlobalAccount = async () => {
     if (!program) return
 
@@ -207,8 +217,8 @@ export default function BalancePaymentFeature() {
 
     const message = Buffer.concat([payload, nonce.toArrayLike(Buffer, 'le', 8), deadline.toArrayLike(Buffer, 'le', 8)])
     const messageHash = keccak('keccak256').update(message).digest()
-    const hashedMessageBase58 = bs58.encode(messageHash);
-    const digest =  new TextEncoder().encode(`${SIGN_MESSAGE_PREFIX}${hashedMessageBase58}`);
+    const hashedMessageBase58 = bs58.encode(messageHash)
+    const digest = new TextEncoder().encode(`${SIGN_MESSAGE_PREFIX}${hashedMessageBase58}`)
 
     let recoverInfo
     try {
@@ -254,6 +264,7 @@ export default function BalancePaymentFeature() {
       toast.error('relay not initialized')
       return
     }
+    const sTag = selectedTab === 'decharge' ? 'dephy-decharge-controller' : 'dephy-gacha-controller'
 
     const payload = JSON.stringify({
       recover_info: JSON.stringify(recoverInfo),
@@ -276,7 +287,7 @@ export default function BalancePaymentFeature() {
       kind: 1573,
       created_at: Math.floor(Date.now() / 1000),
       tags: [
-        ['s', 'dephy-decharge-controller'],
+        ['s', sTag],
         ['p', machinePubkey],
       ],
       content,
@@ -299,6 +310,8 @@ export default function BalancePaymentFeature() {
       return
     }
 
+    const sTag = selectedTab === 'decharge' ? 'dephy-decharge-controller' : 'dephy-gacha-controller'
+
     // clear old subscription
     if (subscriptionRef.current) {
       subscriptionRef.current.close()
@@ -310,7 +323,7 @@ export default function BalancePaymentFeature() {
         {
           kinds: [1573],
           since: Math.floor(Date.now() / 1000),
-          '#s': ['dephy-decharge-controller'],
+          '#s': [sTag],
           '#p': [machinePubkey],
         },
       ],
@@ -362,33 +375,52 @@ export default function BalancePaymentFeature() {
 
   const ProgressBar = () => {
     let progress = 0
-    let statusText = ''
+    // let statusText = ''
     let barColor = 'bg-gray-300' // default gray
+
+    const statusTextMap = {
+      decharge: {
+        requested: 'Requested - Waiting for charging station...',
+        working: 'Working - Charging in progress...',
+        available: 'Available - Charging completed!',
+        error: 'Error - Charging failed!',
+        idle: 'Idle - Ready to charge',
+      },
+      gacha: {
+        requested: 'Requested - Waiting for gacha machine...',
+        working: 'Working - Gacha in progress...',
+        available: 'Available - Gacha completed!',
+        error: 'Error - Gacha failed!',
+        idle: 'Idle - Ready to play',
+      },
+    }
+
+    const statusText = statusTextMap[selectedTab][chargeStatus]
 
     switch (chargeStatus) {
       case 'requested':
         progress = 33
-        statusText = 'Requested - Waiting for charging station...'
+        // statusText = 'Requested - Waiting for charging station...'
         barColor = 'bg-blue-500'
         break
       case 'working':
         progress = 66
-        statusText = 'Working - Charging in progress...'
+        // statusText = 'Working - Charging in progress...'
         barColor = 'bg-blue-500'
         break
       case 'available':
         progress = 100
-        statusText = 'Available - Charging completed!'
+        // statusText = 'Available - Charging completed!'
         barColor = 'bg-green-500'
         break
       case 'error':
         progress = 100
-        statusText = 'Error - Something went wrong!'
+        // statusText = 'Error - Something went wrong!'
         barColor = 'bg-red-500'
         break
       default:
         progress = 0
-        statusText = 'Idle - Ready to charge'
+        // statusText = 'Idle - Ready to charge'
         barColor = 'bg-gray-300'
     }
 
@@ -414,17 +446,17 @@ export default function BalancePaymentFeature() {
     }
 
     const getPurpose = () => {
+      const sTag = event.tags.find((t: string[]) => t[0] === 's')?.[1]
+      const eventType = sTag === 'dephy-decharge-controller' ? 'Decharge' : 'Gacha'
+
       try {
         const content = JSON.parse(event.content)
-        if (content.Request) {
-          return 'Request'
-        } else if (content.Status) {
-          return `Status: ${content.Status.status}`
-        }
-      } catch (error) {
-        return 'Error'
+        if (content.Request) return `${eventType} Request`
+        if (content.Status) return `${eventType} Status: ${content.Status.status}`
+      } catch {
+        return 'Invalid Event'
       }
-      return 'Unknown'
+      return 'Unknown Event'
     }
 
     const formatTime = (timestamp: number) => {
@@ -451,6 +483,30 @@ export default function BalancePaymentFeature() {
 
   return publicKey ? (
     <div className="max-w-4xl mx-auto p-4">
+      {/* Tab */}
+      <div className="inline-flex p-1 bg-gray-100 rounded-full mb-8">
+        <button
+          className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+            selectedTab === 'decharge' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+          } ${isTabDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+          onClick={() => handleSelectTab('decharge')}
+          disabled={isTabDisabled}
+        >
+          Decharge
+          {selectedTab === 'decharge' && isTabDisabled && <span className="ml-2 animate-pulse">(Processing...)</span>}
+        </button>
+        <button
+          className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+            selectedTab === 'gacha' ? 'bg-white text-pink-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+          } ${isTabDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+          onClick={() => handleSelectTab('gacha')}
+          disabled={isTabDisabled}
+        >
+          Gacha
+          {selectedTab === 'gacha' && isTabDisabled && <span className="ml-2 animate-pulse">(Processing...)</span>}
+        </button>
+      </div>
+
       <div className="flex flex-wrap gap-4 mb-8">
         {/* userAccount */}
         <div className="flex-1 p-4 bg-base-200 rounded-lg shadow-md">
@@ -518,7 +574,7 @@ export default function BalancePaymentFeature() {
       </div>
 
       <div className="mb-8 p-4 bg-base-200 rounded-lg shadow-md">
-        <h2 className="text-xl font-bold mb-4">Charge</h2>
+        <h2 className="text-xl font-bold mb-4">{selectedTab === 'decharge' ? 'Charge' : 'Gacha'}</h2>
         <ProgressBar />
 
         {events.map((event, index) => (
@@ -538,20 +594,27 @@ export default function BalancePaymentFeature() {
           </div>
         )}
 
-        <input
-          type="text"
-          placeholder="Enter Machine Pubkey"
-          value={machinePubkey || ''}
-          onChange={(e) => setMachinePubkey(e.target.value)}
-          className="input input-bordered w-full placeholder:text-sm mt-4"
-        />
+        <div className="mt-4 p-4 bg-base-100 rounded-lg shadow-md">
+          <h2 className="text-xl font-bold mb-2">Machine Pubkey</h2>
+          <input
+            type="text"
+            placeholder="Enter Machine Pubkey"
+            value={machinePubkey || ''}
+            onChange={(e) => setMachinePubkey(e.target.value)}
+            className="input input-bordered w-full placeholder:text-sm mt-4"
+          />
+        </div>
 
         <button
-          className="btn btn-primary w-full mt-4"
+          className={`btn btn-primary w-full mt-4 border-none ${
+            selectedTab === 'decharge'
+              ? 'bg-blue-500 hover:bg-blue-600 text-white'
+              : 'bg-pink-500 hover:bg-pink-600 text-white'
+          }`}
           onClick={handleCharge}
           disabled={!wallet || !serialNumberBytes || !machinePubkey || isChargeDisabled || chargeStatus !== 'idle'}
         >
-          Charge
+          {selectedTab === 'decharge' ? 'Start Charge' : 'Play Gacha'}
         </button>
 
         {recoverInfo && (
