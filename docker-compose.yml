@@ -67,6 +67,7 @@ services:
       RUST_BACKTRACE: "1"
     volumes:
       - dephy_gacha_controller_data:/opt/dephy-vending-machine-examples/data:rw
+      - ./keypairs/bot.demo.json:/opt/dephy-vending-machine-examples/data/solana-keypair
     command: >
       --nostr-relay 'ws://dephy-messaging-network:8000'
       --solana-rpc-url "${SOLANA_RPC_URL:-http://host.docker.internal:8899}"
