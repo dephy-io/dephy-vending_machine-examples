@@ -353,7 +353,7 @@ impl MessageHandler {
                     let mention = mention.to_string();
                     let event_id = event.id;
                     tokio::spawn(async move {
-                        tokio::time::sleep(std::time::Duration::from_secs(60)).await;
+                        tokio::time::sleep(std::time::Duration::from_secs(10)).await;
                         client
                             .send_event(&mention, &DephyGachaMessage::Status {
                                 status: DephyGachaStatus::Available,
