@@ -40,6 +40,7 @@ export default function BalancePaymentFeature() {
   const [expandedEventIndex, setExpandedEventIndex] = useState<number | null>(null)
   const [isChargeDisabled, setIsChargeDisabled] = useState(false)
   const isTabDisabled = chargeStatus !== 'idle' && chargeStatus !== 'available'
+  const [initialRequestId, setInitialRequestId] = useState<string>()
 
   const subscriptionRef = useRef<any>(null)
 
@@ -252,7 +253,7 @@ export default function BalancePaymentFeature() {
   }
 
   const handleStop = async () => {
-    if (!sk || !relay || !machinePubkey) {
+    if (!sk || !relay || !machinePubkey || !initialRequestId) {
       toast.error('Not initialized')
       return
     }
@@ -263,7 +264,7 @@ export default function BalancePaymentFeature() {
         Request: {
           to_status: 'Available',
           reason: 'UserRequest',
-          initial_request: '0000000000000000000000000000000000000000000000000000000000000000',
+          initial_request: initialRequestId,
           payload: '',
         },
       }
@@ -280,7 +281,7 @@ export default function BalancePaymentFeature() {
       }
       const signedEvent = finalizeEvent(eventTemplate, sk)
       await relay.publish(signedEvent)
-      toast.success('Stop request sent')
+      toast.success(`Stop request id [${initialRequestId}]`)
       handleReset()
     } catch (error) {
       toast.error(`Failed to send stop request: ${error}`)
@@ -370,6 +371,7 @@ export default function BalancePaymentFeature() {
             const content = JSON.parse(event.content)
             if (content.Request) {
               setChargeStatus('requested')
+              setInitialRequestId(event.id);
             } else if (content.Status) {
               if (content.Status.status === 'Working') {
                 setChargeStatus('working')
