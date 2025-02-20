@@ -40,7 +40,7 @@ export default function BalancePaymentFeature() {
   const [expandedEventIndex, setExpandedEventIndex] = useState<number | null>(null)
   const [isChargeDisabled, setIsChargeDisabled] = useState(false)
   const isTabDisabled = chargeStatus !== 'idle' && chargeStatus !== 'available'
-  const [initialRequestId, setInitialRequestId] = useState<string>()
+  const [initialRequestId, setInitialRequestId] = useState<string | null>(null)
 
   const subscriptionRef = useRef<any>(null)
 
@@ -409,6 +409,7 @@ export default function BalancePaymentFeature() {
     setEvents([])
     setChargeStatus('idle')
     setIsChargeDisabled(false)
+    setInitialRequestId(null)
   }
 
   const ProgressBar = () => {
