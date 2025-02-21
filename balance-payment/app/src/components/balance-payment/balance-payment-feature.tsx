@@ -42,6 +42,7 @@ export default function BalancePaymentFeature() {
   const isTabDisabled = chargeStatus !== 'idle' && chargeStatus !== 'available'
   const [initialRequestId, setInitialRequestId] = useState<string | null>(null)
   const [initialPayload, setInitialPayload] = useState<string | null>(null)
+  const [stopFlag, setStopFlag] = useState(false);
 
   const subscriptionRef = useRef<any>(null)
 
@@ -283,6 +284,7 @@ export default function BalancePaymentFeature() {
       const signedEvent = finalizeEvent(eventTemplate, sk)
       await relay.publish(signedEvent)
       toast.success(`Stop request id [${initialRequestId}]`)
+      setStopFlag(true);
     } catch (error) {
       toast.error(`Failed to send stop request: ${error}`)
     }
@@ -413,6 +415,7 @@ export default function BalancePaymentFeature() {
     setIsChargeDisabled(false)
     setInitialRequestId(null)
     setInitialPayload(null)
+    setStopFlag(false);
   }
 
   const ProgressBar = () => {
@@ -424,7 +427,7 @@ export default function BalancePaymentFeature() {
       decharge: {
         requested: 'Requested - Waiting for charging station...',
         working: 'Working - Charging in progress...',
-        available: 'Available - Charging completed!',
+        available: `Available - Charging ${stopFlag ? 'stopped' : 'completed'}!`,
         error: 'Error - Charging failed!',
         idle: 'Idle - Ready to charge',
       },
