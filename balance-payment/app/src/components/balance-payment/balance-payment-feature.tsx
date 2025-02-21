@@ -419,6 +419,7 @@ export default function BalancePaymentFeature() {
     setInitialRequestId(null)
     setInitialPayload(null)
     setStopFlag(false)
+    setIsStopPending(false)
   }
 
   const ProgressBar = () => {
