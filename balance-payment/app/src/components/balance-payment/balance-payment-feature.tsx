@@ -283,7 +283,6 @@ export default function BalancePaymentFeature() {
       const signedEvent = finalizeEvent(eventTemplate, sk)
       await relay.publish(signedEvent)
       toast.success(`Stop request id [${initialRequestId}]`)
-      handleReset()
     } catch (error) {
       toast.error(`Failed to send stop request: ${error}`)
     }
