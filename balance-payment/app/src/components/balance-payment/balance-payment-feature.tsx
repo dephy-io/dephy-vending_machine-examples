@@ -41,6 +41,7 @@ export default function BalancePaymentFeature() {
   const [isChargeDisabled, setIsChargeDisabled] = useState(false)
   const isTabDisabled = chargeStatus !== 'idle' && chargeStatus !== 'available'
   const [initialRequestId, setInitialRequestId] = useState<string | null>(null)
+  const [initialPayload, setInitialPayload] = useState<string | null>(null)
 
   const subscriptionRef = useRef<any>(null)
 
@@ -71,7 +72,7 @@ export default function BalancePaymentFeature() {
   }, [publicKey])
 
   useEffect(() => {
-    ;(async () => {
+    (async () => {
       const sk = generateSecretKey()
       setSk(sk)
 
@@ -253,7 +254,7 @@ export default function BalancePaymentFeature() {
   }
 
   const handleStop = async () => {
-    if (!sk || !relay || !machinePubkey || !initialRequestId) {
+    if (!sk || !relay || !machinePubkey || !initialRequestId || !initialPayload) {
       toast.error('Not initialized')
       return
     }
@@ -265,7 +266,7 @@ export default function BalancePaymentFeature() {
           to_status: 'Available',
           reason: 'UserRequest',
           initial_request: initialRequestId,
-          payload: '',
+          payload: initialPayload,
         },
       }
 
@@ -308,6 +309,8 @@ export default function BalancePaymentFeature() {
       nonce,
       user,
     })
+
+    setInitialPayload(payload)
 
     const contentData = {
       Request: {
@@ -371,7 +374,7 @@ export default function BalancePaymentFeature() {
             const content = JSON.parse(event.content)
             if (content.Request) {
               setChargeStatus('requested')
-              setInitialRequestId(event.id);
+              setInitialRequestId(event.id)
             } else if (content.Status) {
               if (content.Status.status === 'Working') {
                 setChargeStatus('working')
@@ -410,6 +413,7 @@ export default function BalancePaymentFeature() {
     setChargeStatus('idle')
     setIsChargeDisabled(false)
     setInitialRequestId(null)
+    setInitialPayload(null)
   }
 
   const ProgressBar = () => {
@@ -655,7 +659,7 @@ export default function BalancePaymentFeature() {
           onClick={selectedTab === 'decharge' && chargeStatus === 'working' ? handleStop : handleCharge}
           disabled={
             selectedTab === 'decharge' && chargeStatus === 'working'
-              ? false 
+              ? false
               : !wallet || !serialNumberBytes || !machinePubkey || isChargeDisabled || chargeStatus !== 'idle'
           }
         >
