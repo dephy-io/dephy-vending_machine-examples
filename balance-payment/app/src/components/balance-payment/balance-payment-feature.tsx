@@ -40,6 +40,7 @@ export default function BalancePaymentFeature() {
   const [expandedEventIndex, setExpandedEventIndex] = useState<number | null>(null)
   const [isChargeDisabled, setIsChargeDisabled] = useState(false)
   const isTabDisabled = chargeStatus !== 'idle' && chargeStatus !== 'available'
+  const [initialRequestId, setInitialRequestId] = useState<string | null>(null)
 
   const subscriptionRef = useRef<any>(null)
 
@@ -251,6 +252,42 @@ export default function BalancePaymentFeature() {
     }
   }
 
+  const handleStop = async () => {
+    if (!sk || !relay || !machinePubkey || !initialRequestId) {
+      toast.error('Not initialized')
+      return
+    }
+
+    try {
+      const sTag = selectedTab === 'decharge' ? 'dephy-decharge-controller' : 'dephy-gacha-controller'
+      const contentData = {
+        Request: {
+          to_status: 'Available',
+          reason: 'UserRequest',
+          initial_request: initialRequestId,
+          payload: '',
+        },
+      }
+
+      const content = JSON.stringify(contentData)
+      const eventTemplate = {
+        kind: 1573,
+        created_at: Math.floor(Date.now() / 1000),
+        tags: [
+          ['s', sTag],
+          ['p', machinePubkey],
+        ],
+        content,
+      }
+      const signedEvent = finalizeEvent(eventTemplate, sk)
+      await relay.publish(signedEvent)
+      toast.success(`Stop request id [${initialRequestId}]`)
+      handleReset()
+    } catch (error) {
+      toast.error(`Failed to send stop request: ${error}`)
+    }
+  }
+
   const publishToRelay = async (nonce: number, recoverInfo: any, user: string) => {
     if (!sk) {
       toast.error('sk not initialized')
@@ -334,6 +371,7 @@ export default function BalancePaymentFeature() {
             const content = JSON.parse(event.content)
             if (content.Request) {
               setChargeStatus('requested')
+              setInitialRequestId(event.id);
             } else if (content.Status) {
               if (content.Status.status === 'Working') {
                 setChargeStatus('working')
@@ -371,6 +409,7 @@ export default function BalancePaymentFeature() {
     setEvents([])
     setChargeStatus('idle')
     setIsChargeDisabled(false)
+    setInitialRequestId(null)
   }
 
   const ProgressBar = () => {
@@ -606,15 +645,21 @@ export default function BalancePaymentFeature() {
         </div>
 
         <button
-          className={`btn btn-primary w-full mt-4 border-none ${
-            selectedTab === 'decharge'
-              ? 'bg-blue-500 hover:bg-blue-600 text-white'
-              : 'bg-pink-500 hover:bg-pink-600 text-white'
-          }`}
-          onClick={handleCharge}
-          disabled={!wallet || !serialNumberBytes || !machinePubkey || isChargeDisabled || chargeStatus !== 'idle'}
+          className={`btn w-full mt-4 border-none ${
+            selectedTab === 'decharge' && chargeStatus === 'working'
+              ? 'bg-red-500 hover:bg-red-600'
+              : selectedTab === 'decharge'
+                ? 'bg-blue-500 hover:bg-blue-600'
+                : 'bg-pink-500 hover:bg-pink-600'
+          } text-white`}
+          onClick={selectedTab === 'decharge' && chargeStatus === 'working' ? handleStop : handleCharge}
+          disabled={
+            selectedTab === 'decharge' && chargeStatus === 'working'
+              ? false 
+              : !wallet || !serialNumberBytes || !machinePubkey || isChargeDisabled || chargeStatus !== 'idle'
+          }
         >
-          {selectedTab === 'decharge' ? 'Start Charge' : 'Play Gacha'}
+          {selectedTab === 'decharge' ? (chargeStatus === 'working' ? 'Stop Charge' : 'Start Charge') : 'Play Gacha'}
         </button>
 
         {recoverInfo && (
