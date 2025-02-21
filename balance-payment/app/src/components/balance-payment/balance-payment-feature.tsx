@@ -42,7 +42,8 @@ export default function BalancePaymentFeature() {
   const isTabDisabled = chargeStatus !== 'idle' && chargeStatus !== 'available'
   const [initialRequestId, setInitialRequestId] = useState<string | null>(null)
   const [initialPayload, setInitialPayload] = useState<string | null>(null)
-  const [stopFlag, setStopFlag] = useState(false);
+  const [stopFlag, setStopFlag] = useState(false)
+  const [isStopPending, setIsStopPending] = useState(false)
 
   const subscriptionRef = useRef<any>(null)
 
@@ -73,7 +74,7 @@ export default function BalancePaymentFeature() {
   }, [publicKey])
 
   useEffect(() => {
-    (async () => {
+    ;(async () => {
       const sk = generateSecretKey()
       setSk(sk)
 
@@ -260,6 +261,7 @@ export default function BalancePaymentFeature() {
       return
     }
 
+    setIsStopPending(true)
     try {
       const sTag = selectedTab === 'decharge' ? 'dephy-decharge-controller' : 'dephy-gacha-controller'
       const contentData = {
@@ -284,9 +286,10 @@ export default function BalancePaymentFeature() {
       const signedEvent = finalizeEvent(eventTemplate, sk)
       await relay.publish(signedEvent)
       toast.success(`Stop request id [${initialRequestId}]`)
-      setStopFlag(true);
+      setStopFlag(true)
     } catch (error) {
       toast.error(`Failed to send stop request: ${error}`)
+      setIsStopPending(false)
     }
   }
 
@@ -415,7 +418,7 @@ export default function BalancePaymentFeature() {
     setIsChargeDisabled(false)
     setInitialRequestId(null)
     setInitialPayload(null)
-    setStopFlag(false);
+    setStopFlag(false)
   }
 
   const ProgressBar = () => {
@@ -626,6 +629,7 @@ export default function BalancePaymentFeature() {
           <EventJsonViewer key={index} event={event} index={index} />
         ))}
 
+        {/* reset */}
         {chargeStatus === 'available' && (
           <button className="btn btn-secondary w-full mt-4" onClick={handleReset}>
             Reset
@@ -650,23 +654,39 @@ export default function BalancePaymentFeature() {
           />
         </div>
 
+        {/* charge */}
         <button
           className={`btn w-full mt-4 border-none ${
-            selectedTab === 'decharge' && chargeStatus === 'working'
-              ? 'bg-red-500 hover:bg-red-600'
-              : selectedTab === 'decharge'
-                ? 'bg-blue-500 hover:bg-blue-600'
-                : 'bg-pink-500 hover:bg-pink-600'
+            selectedTab === 'decharge' ? 'bg-blue-500 hover:bg-blue-600' : 'bg-pink-500 hover:bg-pink-600'
           } text-white`}
-          onClick={selectedTab === 'decharge' && chargeStatus === 'working' ? handleStop : handleCharge}
-          disabled={
-            selectedTab === 'decharge' && chargeStatus === 'working'
-              ? false
-              : !wallet || !serialNumberBytes || !machinePubkey || isChargeDisabled || chargeStatus !== 'idle'
-          }
+          onClick={handleCharge}
+          disabled={!wallet || !serialNumberBytes || !machinePubkey || isChargeDisabled || chargeStatus !== 'idle'}
         >
-          {selectedTab === 'decharge' ? (chargeStatus === 'working' ? 'Stop Charge' : 'Start Charge') : 'Play Gacha'}
+          {selectedTab === 'decharge' ? 'Start Charge' : 'Play Gacha'}
         </button>
+
+        {/* stop */}
+        {selectedTab === 'decharge' && (
+          <button
+            className="btn w-full mt-2 bg-red-500 hover:bg-red-600 text-white border-none"
+            onClick={handleStop}
+            disabled={chargeStatus !== 'working' || !initialRequestId || isStopPending} 
+          >
+            {isStopPending ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+                  <path
+                    fill="currentColor"
+                    d="M12,4V1L8,5l4,4V6c3.31,0,6,2.69,6,6c0,1.01-.25,1.97-.7,2.8l1.46,1.46C19.54,15.03,20,13.57,20,12c0-4.42-3.58-8-8-8zm0,14c-3.31,0-6-2.69-6-6c0-1.01.25-1.97.7-2.8L5.24,7.74C4.46,8.97,4,10.43,4,12c0,4.42,3.58,8,8,8v3l4-4l-4-4V18z"
+                  />
+                </svg>
+                Stopping...
+              </span>
+            ) : (
+              'Stop Charge'
+            )}
+          </button>
+        )}
 
         {recoverInfo && (
           <div className="mt-6 p-6 bg-base-100 rounded-lg shadow-md">
