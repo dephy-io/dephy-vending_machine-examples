@@ -23,8 +23,9 @@ See <https://balance-payment.pages.dev/program> for the dApp
 
 ## Run from source
 
-1. Run DePHY vending machine workers by: `docker compose up`
-2. [Deploy the Solana program and run the dApp](./balance-payment/README.md)
+1. [Run DePHY messaging network](https://github.com/dephy-io/dephy-messaging-network-self-hosted/tree/main/dephy-messaging-network)
+2. Run DePHY vending machine workers by: `docker compose up`
+3. [Deploy the Solana program and run the dApp](./balance-payment/README.md)
 
 ## TODO
 

@@ -7,23 +7,8 @@ services:
       POSTGRES_PASSWORD: dephy
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker-compose-postgres-init/messaging_network_migrations:/messaging_network_migrations
       - ./docker-compose-postgres-init/decharge-controller-docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
       - ./examples/decharge-controller/migrations:/decharge_controller_server_migrations
-    ports:
-      - "6432:5432"
-
-  dephy-messaging-network:
-    depends_on:
-      - postgres
-    image: dephyio/dephy-messaging-network:master
-    restart: always
-    environment:
-      RUST_LOG: "info,dephy_messaging_network=debug"
-      RUST_BACKTRACE: "1"
-    command: "serve --pg-url 'postgresql://dephy:dephy@postgres:5432/dephy_messaging_network' --api-addr 0.0.0.0:8000"
-    ports:
-      - "8000:8000"
 
   dephy-decharge-controller-server:
     depends_on:
@@ -31,13 +16,15 @@ services:
     image: dephyio/dephy-vending-machine-examples:main
     restart: always
     entrypoint: /usr/bin/dephy-decharge-controller-server
+    extra_hosts:
+      host.docker.internal: host-gateway
     environment:
       RUST_LOG: "debug"
       RUST_BACKTRACE: "1"
     volumes:
       - ./keypairs/bot.demo.json:/opt/dephy-vending-machine-examples/data/solana-keypair
     command: >
-      --nostr-relay 'ws://dephy-messaging-network:8000'
+      --nostr-relay "${NOSTR_RELAY:-ws://host.docker.internal:8000}"
       --key '80ed9975bc5c18c8852c202e4ddc0ae62abf7d9484c3a0d425f501623907129b'
       --solana-rpc-url "${SOLANA_RPC_URL:-http://host.docker.internal:8899}"
       --pg-url 'postgresql://dephy:dephy@postgres:5432/dephy_decharge_controller_server'
@@ -48,6 +35,8 @@ services:
     image: dephyio/dephy-vending-machine-examples:main
     restart: always
     entrypoint: /usr/bin/dephy-decharge-controller-node
+    extra_hosts:
+      host.docker.internal: host-gateway
     user: root # have to be root to write key file to data directory
     environment:
       RUST_LOG: "debug"
@@ -55,7 +44,7 @@ services:
     volumes:
       - dephy_decharge_controller_node_1_data:/opt/dephy-vending-machine-examples/data:rw
     command: >
-      --nostr-relay 'ws://dephy-messaging-network:8000'
+      --nostr-relay "${NOSTR_RELAY:-ws://host.docker.internal:8000}"
       --solana-rpc-url "${SOLANA_RPC_URL:-http://host.docker.internal:8899}"
       --machine-pubkeys 'd041ea9854f2117b82452457c4e6d6593a96524027cd4032d2f40046deb78d93'
       --admin-pubkey '90b6bb6472b2609c63dfb588aa1a10780dc043ffc0ab2349679c50644c0bc445'
@@ -66,6 +55,8 @@ services:
     image: dephyio/dephy-vending-machine-examples:main
     restart: always
     entrypoint: /usr/bin/dephy-gacha-controller
+    extra_hosts:
+      host.docker.internal: host-gateway
     user: root # have to be root to write key file to data directory
     environment:
       RUST_LOG: "debug"
@@ -74,7 +65,7 @@ services:
       - dephy_gacha_controller_data:/opt/dephy-vending-machine-examples/data:rw
       - ./keypairs/bot.demo.json:/opt/dephy-vending-machine-examples/data/solana-keypair
     command: >
-      --nostr-relay 'ws://dephy-messaging-network:8000'
+      --nostr-relay "${NOSTR_RELAY:-ws://host.docker.internal:8000}"
       --solana-rpc-url "${SOLANA_RPC_URL:-http://host.docker.internal:8899}"
       --machine-pubkeys 'd041ea9854f2117b82452457c4e6d6593a96524027cd4032d2f40046deb78d93'
       --admin-pubkey 'd041ea9854f2117b82452457c4e6d6593a96524027cd4032d2f40046deb78d93'

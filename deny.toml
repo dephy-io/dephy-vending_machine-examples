@@ -16,6 +16,10 @@ ignore = [
   "RUSTSEC-2021-0145",
   # waiting for solana crates to be updated
   "RUSTSEC-2024-0375",
+  # waiting for solana crates to be updated
+  "RUSTSEC-2024-0436",
+  # waiting for solana crates to be updated
+  "RUSTSEC-2025-0009",
 ]
 
 [bans]
