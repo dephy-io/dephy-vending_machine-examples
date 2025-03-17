@@ -11,8 +11,6 @@ services:
       - ./examples/decharge-controller/migrations:/decharge_controller_server_migrations
 
   dephy-decharge-controller-server:
-    depends_on:
-      - dephy-messaging-network
     image: dephyio/dephy-vending-machine-examples:main
     restart: always
     entrypoint: /usr/bin/dephy-decharge-controller-server
@@ -30,8 +28,6 @@ services:
       --pg-url 'postgresql://dephy:dephy@postgres:5432/dephy_decharge_controller_server'
 
   dephy-decharge-controller-node-1:
-    depends_on:
-      - dephy-messaging-network
     image: dephyio/dephy-vending-machine-examples:main
     restart: always
     entrypoint: /usr/bin/dephy-decharge-controller-node
@@ -50,8 +46,6 @@ services:
       --admin-pubkey '90b6bb6472b2609c63dfb588aa1a10780dc043ffc0ab2349679c50644c0bc445'
 
   dephy-gacha-controller:
-    depends_on:
-      - dephy-messaging-network
     image: dephyio/dephy-vending-machine-examples:main
     restart: always
     entrypoint: /usr/bin/dephy-gacha-controller
