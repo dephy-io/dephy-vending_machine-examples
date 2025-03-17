@@ -88,6 +88,20 @@ export default function BalancePaymentFeature() {
     })()
   }, [])
 
+  useEffect(() => {
+    if (!relay || !sk || !machinePubkey) return; // Wait until everything is ready
+  
+    listenFromRelay();
+  
+    // Cleanup subscription on unmount or when dependencies change
+    return () => {
+      if (subscriptionRef.current) {
+        subscriptionRef.current.close();
+        subscriptionRef.current = null;
+      }
+    };
+  }, [relay, sk, machinePubkey, selectedTab]); // Dependencies that affect the subscription  
+
   const solToLamports = (sol: string): BN => {
     const solNumber = parseFloat(sol)
     if (isNaN(solNumber) || solNumber < 0) {
@@ -243,14 +257,6 @@ export default function BalancePaymentFeature() {
       await publishToRelay(nonce.toNumber(), recoverInfo, publicKey.toString())
     } catch (error) {
       toast.error(`Error publishing to relay: ${error}`)
-      setIsChargeDisabled(false)
-      return
-    }
-
-    try {
-      await listenFromRelay()
-    } catch (error) {
-      toast.error(`Error listening from relay: ${error}`)
       setIsChargeDisabled(false)
     }
   }
@@ -671,7 +677,7 @@ export default function BalancePaymentFeature() {
           <button
             className="btn w-full mt-2 bg-red-500 hover:bg-red-600 text-white border-none"
             onClick={handleStop}
-            disabled={chargeStatus !== 'working' || !initialRequestId || isStopPending} 
+            disabled={chargeStatus !== 'working' || !initialRequestId || isStopPending}
           >
             {isStopPending ? (
               <span className="flex items-center justify-center">
