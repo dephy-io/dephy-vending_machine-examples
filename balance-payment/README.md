@@ -51,7 +51,6 @@ solana config set --url http://localhost:8899
 3. **Airdrop SOL to your local wallet:**
 
 ```bash
-solana airdrop 2
 solana airdrop 2 9nyhqLqmbWoUuNXA1XCVnEqiS9UWvxFYa1yynVVFzR4D
 ```
 
@@ -68,7 +67,7 @@ This command will deploy the program to the local Solana validator and output th
 Initializes the program with an authority, treasury, and bot.
 
 ```bash
-anchor run cli -- initialize --authority <AUTHORITY_PUBKEY> --treasury <TREASURY_PUBKEY> --bot 9nyhqLqmbWoUuNXA1XCVnEqiS9UWvxFYa1yynVVFzR4D
+anchor run cli -- initialize --authority $(solana address) --treasury $(solana address) --bot 9nyhqLqmbWoUuNXA1XCVnEqiS9UWvxFYa1yynVVFzR4D
 ```
 
 - `--authority`: The public key of the authority.
