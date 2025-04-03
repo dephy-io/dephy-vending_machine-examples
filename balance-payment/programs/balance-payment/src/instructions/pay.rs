@@ -1,6 +1,6 @@
 use crate::{
     errors::CustomError,
-    state::{GlobalAccount, UserAccount},
+    state::{NamespaceAccount, UserAccount},
 };
 use anchor_lang::{prelude::*, system_program};
 
@@ -8,12 +8,13 @@ use super::ED25519RecoverInfo;
 
 pub fn pay(
     ctx: Context<Pay>,
+    namespace_id: u64,
     recover_info: ED25519RecoverInfo,
     amount_to_transfer: u64,
 ) -> Result<()> {
     let user_account = &mut ctx.accounts.user_account;
 
-    recover_info.verify(user_account.nonce, &ctx.accounts.user.key())?;
+    recover_info.verify(namespace_id, user_account.nonce, &ctx.accounts.user.key())?;
 
     require!(
         ctx.accounts.vault.get_lamports() - user_account.locked_amount >= amount_to_transfer,
@@ -42,16 +43,17 @@ pub fn pay(
 }
 
 #[derive(Accounts)]
+#[instruction(namespace_id: u64)]
 pub struct Pay<'info> {
-    #[account(has_one = bot @ CustomError::Unauthorized, seeds = [b"GLOBAL"], bump)]
-    pub global_account: Account<'info, GlobalAccount>,
+    #[account(has_one = bot @ CustomError::Unauthorized, seeds = [b"NAMESPACE", namespace_id.to_le_bytes().as_ref()], bump)]
+    pub namespace_account: Account<'info, NamespaceAccount>,
     #[account(mut, seeds = [b"USER", user.key.as_ref()], bump)]
     pub user_account: Account<'info, UserAccount>,
     /// CHECK:
     #[account(mut)]
     pub user: UncheckedAccount<'info>,
     /// CHECK:
-    #[account(mut, constraint = treasury.key() == global_account.treasury)]
+    #[account(mut, constraint = treasury.key() == namespace_account.treasury)]
     pub treasury: UncheckedAccount<'info>,
     /// CHECK:
     #[account(mut, seeds = [b"VAULT", user.key().as_ref()], bump)]

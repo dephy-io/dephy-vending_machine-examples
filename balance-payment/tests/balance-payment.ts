@@ -5,7 +5,7 @@ import { BalancePayment } from "../target/types/balance_payment";
 import { assert } from "chai";
 import keccak from "keccak";
 import * as ed from "@noble/ed25519";
-import bs58 from 'bs58';
+import bs58 from "bs58";
 
 const SIGN_MESSAGE_PREFIX = "DePHY vending machine/Example:\n";
 
@@ -24,10 +24,23 @@ describe("balance-payment", () => {
 
   const user = web3.Keypair.generate();
 
+  const myTestNamespaceId = new BN(0);
+
+  const depositAmount = sol(50);
+  const withdrawAmount = sol(1);
+
   const [globalAccountPubkey, _] = web3.PublicKey.findProgramAddressSync(
     [Buffer.from("GLOBAL")],
     anchor.workspace.BalancePayment.programId
   );
+
+  const getNamespaceAccountPubkey = (namespaceId: BN) => {
+    const [namespaceAccountPubkey, _] = web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("NAMESPACE"), namespaceId.toArrayLike(Buffer, "le", 8)],
+      anchor.workspace.BalancePayment.programId
+    );
+    return namespaceAccountPubkey;
+  };
 
   const getUserAccountPubkey = (user: web3.PublicKey) => {
     const [userAccountPubkey, _] = web3.PublicKey.findProgramAddressSync(
@@ -81,42 +94,60 @@ describe("balance-payment", () => {
     const tempBot = web3.Keypair.generate().publicKey;
     const { signature } = await program.methods
       .initialize()
-      .accountsPartial({
-        authority: authority.publicKey,
-        treasury: tempTreasury,
-        bot: tempBot,
-      })
+      .accountsPartial({})
       .rpcAndKeys();
     console.log("initialize:", signature);
 
     const global = await program.account.globalAccount.fetch(
       globalAccountPubkey
     );
-    assert.equal(global.authority.toString(), authority.publicKey.toString());
-    assert.equal(global.treasury.toString(), tempTreasury.toString());
-    assert.equal(global.bot.toString(), tempBot.toString());
+    assert.equal(global.namespaceNonce.toNumber(), 0);
   });
 
-  it("set treasury", async () => {
+  it("create namespace", async () => {
+    const tempTreasury = web3.Keypair.generate().publicKey;
+    const tempBot = web3.Keypair.generate().publicKey;
     const { signature } = await program.methods
-      .setTreasury()
+      .createNamespace("My Test")
+      .accountsPartial({
+        authority: authority.publicKey,
+        treasury: tempTreasury,
+        bot: tempBot,
+      })
+      .rpcAndKeys();
+    console.log("create_namespace:", signature);
+
+    const namespace = await program.account.namespaceAccount.fetch(
+      getNamespaceAccountPubkey(myTestNamespaceId)
+    );
+    assert.equal(
+      namespace.authority.toString(),
+      authority.publicKey.toString()
+    );
+    assert.equal(namespace.treasury.toString(), tempTreasury.toString());
+    assert.equal(namespace.bot.toString(), tempBot.toString());
+  });
+
+  it("set namespace treasury", async () => {
+    const { signature } = await program.methods
+      .setNamespaceTreasury(myTestNamespaceId)
       .accountsPartial({
         authority: authority.publicKey,
         treasury: treasury.publicKey,
       })
       .signers([authority])
       .rpcAndKeys();
-    console.log("set_treasury:", signature);
+    console.log("set_namespace_treasury:", signature);
 
-    const global = await program.account.globalAccount.fetch(
-      globalAccountPubkey
+    const namespace = await program.account.namespaceAccount.fetch(
+      getNamespaceAccountPubkey(myTestNamespaceId)
     );
-    assert.equal(global.treasury.toString(), treasury.publicKey.toString());
+    assert.equal(namespace.treasury.toString(), treasury.publicKey.toString());
   });
 
   it("set bot", async () => {
     const { signature } = await program.methods
-      .setBot()
+      .setNamespaceBot(myTestNamespaceId)
       .accountsPartial({
         authority: authority.publicKey,
         bot: bot.publicKey,
@@ -125,10 +156,10 @@ describe("balance-payment", () => {
       .rpcAndKeys();
     console.log("set_bot:", signature);
 
-    const global = await program.account.globalAccount.fetch(
-      globalAccountPubkey
+    const namespace = await program.account.namespaceAccount.fetch(
+      getNamespaceAccountPubkey(myTestNamespaceId)
     );
-    assert.equal(global.bot.toString(), bot.publicKey.toString());
+    assert.equal(namespace.bot.toString(), bot.publicKey.toString());
   });
 
   it("register", async () => {
@@ -152,10 +183,8 @@ describe("balance-payment", () => {
   });
 
   it("deposit", async () => {
-    const amount = sol(11);
-
     const { signature } = await program.methods
-      .deposit(amount)
+      .deposit(depositAmount)
       .accountsPartial({
         user: user.publicKey,
       })
@@ -168,14 +197,12 @@ describe("balance-payment", () => {
       userVaultPubkey
     );
 
-    assert(amount.eq(new BN(userVaultBalance)));
+    assert(depositAmount.eq(new BN(userVaultBalance)));
   });
 
   it("withdraw", async () => {
-    const amount = sol(1);
-
     const { signature } = await program.methods
-      .withdraw(amount)
+      .withdraw(withdrawAmount)
       .accountsPartial({
         user: user.publicKey,
       })
@@ -188,7 +215,9 @@ describe("balance-payment", () => {
       userVaultPubkey
     );
 
-    assert(sol(10).eq(new BN(userVaultBalance)));
+    const remainingAmount = depositAmount.sub(withdrawAmount);
+
+    assert(remainingAmount.eq(new BN(userVaultBalance)));
   });
 
   it("lock", async () => {
@@ -206,13 +235,16 @@ describe("balance-payment", () => {
     const deadline = new BN(Date.now() / 1000 + 60 * 30); // 30 minutes later
     const message = Buffer.concat([
       payload,
+      myTestNamespaceId.toArrayLike(Buffer, "le", 8),
       nonce.toArrayLike(Buffer, "le", 8),
       deadline.toArrayLike(Buffer, "le", 8),
     ]);
 
     const messageHash = keccak("keccak256").update(message).digest();
     const hashedMessageBase58 = bs58.encode(messageHash);
-    const digest =  new TextEncoder().encode(`${SIGN_MESSAGE_PREFIX}${hashedMessageBase58}`);
+    const digest = new TextEncoder().encode(
+      `${SIGN_MESSAGE_PREFIX}${hashedMessageBase58}`
+    );
 
     const privateKey = user.secretKey.slice(0, 32);
 
@@ -225,19 +257,23 @@ describe("balance-payment", () => {
     };
 
     const { signature: txSignature } = await program.methods
-    .lock(recoverInfo, amount)
-    .accountsPartial({
-      user: user.publicKey,
-      bot: bot.publicKey,
-    })
-    .signers([bot])
-    .rpcAndKeys();
+      .lock(myTestNamespaceId, recoverInfo, amount)
+      .accountsPartial({
+        user: user.publicKey,
+        bot: bot.publicKey,
+      })
+      .signers([bot])
+      .rpcAndKeys();
 
     console.log("lock:", txSignature);
 
     const lockAccountPubkey = getLockAccountPubkey(user.publicKey, nonce);
     const lockAccount = await program.account.lockAccount.fetch(
       lockAccountPubkey
+    );
+    assert.equal(
+      lockAccount.namespaceId.toString(),
+      myTestNamespaceId.toString()
     );
     assert.equal(lockAccount.amount.toString(), amount.toString());
 
@@ -269,11 +305,9 @@ describe("balance-payment", () => {
     const lockAccountPubkey = getLockAccountPubkey(user.publicKey, nonce);
 
     try {
-      await program.account.lockAccount.fetch(
-        lockAccountPubkey
-      );
+      await program.account.lockAccount.fetch(lockAccountPubkey);
     } catch (error) {
-      assert(error.message.includes("Account does not exist"))
+      assert(error.message.includes("Account does not exist"));
     }
 
     const userAccountPubkey = getUserAccountPubkey(user.publicKey);
@@ -298,13 +332,16 @@ describe("balance-payment", () => {
     const deadline = new BN(Date.now() / 1000 + 60 * 30); // 30 minutes later
     const message = Buffer.concat([
       payload,
+      myTestNamespaceId.toArrayLike(Buffer, "le", 8),
       nonce.toArrayLike(Buffer, "le", 8),
       deadline.toArrayLike(Buffer, "le", 8),
     ]);
 
     const messageHash = keccak("keccak256").update(message).digest();
     const hashedMessageBase58 = bs58.encode(messageHash);
-    const digest =  new TextEncoder().encode(`${SIGN_MESSAGE_PREFIX}${hashedMessageBase58}`);
+    const digest = new TextEncoder().encode(
+      `${SIGN_MESSAGE_PREFIX}${hashedMessageBase58}`
+    );
 
     const privateKey = user.secretKey.slice(0, 32);
 
@@ -321,14 +358,14 @@ describe("balance-payment", () => {
     );
 
     const { signature: txSignature } = await program.methods
-    .pay(recoverInfo, amountToTransfer)
-    .accountsPartial({
-      user: user.publicKey,
-      treasury: treasury.publicKey,
-      bot: bot.publicKey,
-    })
-    .signers([bot])
-    .rpcAndKeys();
+      .pay(myTestNamespaceId, recoverInfo, amountToTransfer)
+      .accountsPartial({
+        user: user.publicKey,
+        treasury: treasury.publicKey,
+        bot: bot.publicKey,
+      })
+      .signers([bot])
+      .rpcAndKeys();
 
     console.log("pay:", txSignature);
 
@@ -336,6 +373,9 @@ describe("balance-payment", () => {
       userAccount.vault
     );
 
-    assert.equal(vaultBalanceBefore - vaultBalanceAfter, amountToTransfer.toNumber());
+    assert.equal(
+      vaultBalanceBefore - vaultBalanceAfter,
+      amountToTransfer.toNumber()
+    );
   });
 });

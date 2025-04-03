@@ -1,10 +1,14 @@
 use crate::{
     errors::CustomError,
-    state::{GlobalAccount, LockAccount, UserAccount},
+    state::{NamespaceAccount, LockAccount, UserAccount},
 };
 use anchor_lang::{prelude::*, system_program};
 
-pub fn settle(ctx: Context<Settle>, _nonce: u64, amount_to_transfer: u64) -> Result<()> {
+pub fn settle(
+    ctx: Context<Settle>,
+    _nonce: u64,
+    amount_to_transfer: u64,
+) -> Result<()> {
     let user_account = &mut ctx.accounts.user_account;
     let lock_account = &mut ctx.accounts.lock_account;
 
@@ -49,15 +53,15 @@ pub fn settle(ctx: Context<Settle>, _nonce: u64, amount_to_transfer: u64) -> Res
 #[derive(Accounts)]
 #[instruction(nonce: u64)]
 pub struct Settle<'info> {
-    #[account(has_one = bot @ CustomError::Unauthorized, seeds = [b"GLOBAL"], bump)]
-    pub global_account: Account<'info, GlobalAccount>,
+    #[account(has_one = bot @ CustomError::Unauthorized, seeds = [b"NAMESPACE", lock_account.namespace_id.to_le_bytes().as_ref()], bump)]
+    pub namespace_account: Account<'info, NamespaceAccount>,
     #[account(mut, seeds = [b"USER", user.key.as_ref()], bump)]
     pub user_account: Account<'info, UserAccount>,
     /// CHECK:
     #[account(mut)]
     pub user: UncheckedAccount<'info>,
     /// CHECK:
-    #[account(mut, constraint = treasury.key() == global_account.treasury)]
+    #[account(mut, constraint = treasury.key() == namespace_account.treasury)]
     pub treasury: UncheckedAccount<'info>,
     #[account(
         mut,
