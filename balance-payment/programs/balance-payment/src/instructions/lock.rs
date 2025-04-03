@@ -1,17 +1,22 @@
 use crate::{
     constants::{self, DISCRIMINATOR_SIZE},
     errors::CustomError,
-    state::{GlobalAccount, LockAccount, UserAccount},
+    state::{NamespaceAccount, LockAccount, UserAccount},
     utils,
 };
 use anchor_lang::{prelude::*, solana_program::keccak};
 use bs58;
 
-pub fn lock(ctx: Context<Lock>, recover_info: ED25519RecoverInfo, amount: u64) -> Result<()> {
+pub fn lock(
+    ctx: Context<Lock>,
+    namespace_id: u64,
+    recover_info: ED25519RecoverInfo,
+    amount: u64,
+) -> Result<()> {
     let user_account = &mut ctx.accounts.user_account;
     let lock_account = &mut ctx.accounts.lock_account;
 
-    recover_info.verify(user_account.nonce, &ctx.accounts.user.key())?;
+    recover_info.verify(namespace_id, user_account.nonce, &ctx.accounts.user.key())?;
 
     require!(
         ctx.accounts.vault.get_lamports() - user_account.locked_amount >= amount,
@@ -20,16 +25,18 @@ pub fn lock(ctx: Context<Lock>, recover_info: ED25519RecoverInfo, amount: u64) -
 
     user_account.nonce += 1;
     user_account.locked_amount += amount;
-
+    
+    lock_account.namespace_id = namespace_id;
     lock_account.amount = amount;
 
     Ok(())
 }
 
 #[derive(Accounts)]
+#[instruction(namespace_id: u64)]
 pub struct Lock<'info> {
-    #[account(has_one = bot @ CustomError::Unauthorized, seeds = [b"GLOBAL"], bump)]
-    pub global_account: Account<'info, GlobalAccount>,
+    #[account(has_one = bot @ CustomError::Unauthorized, seeds = [b"NAMESPACE", namespace_id.to_le_bytes().as_ref()], bump)]
+    pub namespace_account: Account<'info, NamespaceAccount>,
     #[account(mut, seeds = [b"USER", user.key.as_ref()], bump)]
     pub user_account: Account<'info, UserAccount>,
     /// CHECK:
@@ -60,9 +67,10 @@ pub struct ED25519RecoverInfo {
 }
 
 impl ED25519RecoverInfo {
-    pub fn verify(&self, nonce: u64, pubkey: &Pubkey) -> Result<()> {
+    pub fn verify(&self, namespace_id: u64, nonce: u64, pubkey: &Pubkey) -> Result<()> {
         let message = {
             let mut data = self.payload.to_vec();
+            data.extend_from_slice(&namespace_id.to_le_bytes());
             data.extend_from_slice(&nonce.to_le_bytes());
             data.extend_from_slice(&self.deadline.to_le_bytes());
             data
@@ -77,8 +85,8 @@ impl ED25519RecoverInfo {
         let hashed_message_base58 = bs58::encode(&hashed_message).into_vec();
 
         let digest = {
-            let mut data = constants::SIGN_MESSAGE_PREFIX.to_vec(); // 前缀转换为 Vec<u8>
-            data.extend_from_slice(&hashed_message_base58); // 添加 Base58 编码的哈希值
+            let mut data = constants::SIGN_MESSAGE_PREFIX.to_vec();
+            data.extend_from_slice(&hashed_message_base58);
             data
         };
 

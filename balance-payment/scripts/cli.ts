@@ -99,14 +99,21 @@ const getUserAccountPubkey = (user: web3.PublicKey) => {
 
 cli.name("cli");
 
+cli.command("initialize").action(async (opt) => {
+  const payfiPool = getBalancePaymentProgram();
+  const tx = payfiPool.methods.initialize().accountsPartial({});
+  await execute(tx);
+});
+
 cli
-  .command("initialize")
+  .command("create_namespace")
+  .requiredOption("--name <name>", "String")
   .requiredOption("--authority <authority>", "Pubkey")
   .requiredOption("--treasury <treasury>", "Pubkey")
   .requiredOption("--bot <bot>", "Pubkey")
   .action(async (opt) => {
     const payfiPool = getBalancePaymentProgram();
-    const tx = payfiPool.methods.initialize().accountsPartial({
+    const tx = payfiPool.methods.createNamespace(opt.name).accountsPartial({
       authority: new web3.PublicKey(opt.authority),
       treasury: new web3.PublicKey(opt.treasury),
       bot: new web3.PublicKey(opt.bot),
@@ -115,28 +122,34 @@ cli
   });
 
 cli
-  .command("set_treasury")
+  .command("set_namespace_treasury")
+  .requiredOption("--namespace_id <namespace_id>", "Number")
   .requiredOption("--treasury <treasury>", "Pubkey")
   .action(async (opt) => {
     const balancePayment = getBalancePaymentProgram();
     const authority = provider.publicKey;
-    const tx = balancePayment.methods.setTreasury().accountsPartial({
-      authority,
-      treasury: new web3.PublicKey(opt.treasury),
-    });
+    const tx = balancePayment.methods
+      .setNamespaceTreasury(new BN(opt.namespace_id))
+      .accountsPartial({
+        authority,
+        treasury: new web3.PublicKey(opt.treasury),
+      });
     await execute(tx);
   });
 
 cli
-  .command("set_bot")
+  .command("set_namespace_bot")
+  .requiredOption("--namespace_id <namespace_id>", "Number")
   .requiredOption("--bot <bot>", "Pubkey")
   .action(async (opt) => {
     const balancePayment = getBalancePaymentProgram();
     const authority = provider.publicKey;
-    const tx = balancePayment.methods.setBot().accountsPartial({
-      authority,
-      bot: new web3.PublicKey(opt.bot),
-    });
+    const tx = balancePayment.methods
+      .setNamespaceBot(new BN(opt.namespace_id))
+      .accountsPartial({
+        authority,
+        bot: new web3.PublicKey(opt.bot),
+      });
     await execute(tx);
   });
 
@@ -177,6 +190,7 @@ cli
 
 cli
   .command("sign_message")
+  .requiredOption("--namespace_id <namespace_id>", "Number")
   .requiredOption("--minutes <minutes>", "Minutes until deadline")
   .option(
     "--keypair <keypair>",
@@ -193,6 +207,8 @@ cli
     // Get nonce from user account
     const nonce = await getNonce(user);
 
+    const namespaceId = new BN(opt.namespace_id);
+
     // Convert minutes to deadline (current timestamp + minutes * 60 seconds)
     const currentTimestamp = Math.floor(Date.now() / 1000);
     const deadline = new BN(currentTimestamp + Number(opt.minutes) * 60);
@@ -203,6 +219,7 @@ cli
     // Create message
     const message = Buffer.concat([
       payload,
+      namespaceId.toArrayLike(Buffer, "le", 8),
       nonce.toArrayLike(Buffer, "le", 8),
       deadline.toArrayLike(Buffer, "le", 8),
     ]);
@@ -210,7 +227,9 @@ cli
     // Hash the message and generate digest
     const messageHash = keccak("keccak256").update(message).digest();
     const hashedMessageBase58 = bs58.encode(messageHash);
-    const digest =  new TextEncoder().encode(`${SIGN_MESSAGE_PREFIX}${hashedMessageBase58}`);
+    const digest = new TextEncoder().encode(
+      `${SIGN_MESSAGE_PREFIX}${hashedMessageBase58}`
+    );
 
     // Get user's private key
     const privateKey = userKeypair.secretKey.slice(0, 32); // First 32 bytes are the private key
@@ -235,6 +254,7 @@ cli
 
 cli
   .command("lock")
+  .requiredOption("--namespace_id <namespace_id>", "Number")
   .requiredOption("--user <user>", "User Pubkey")
   .requiredOption("--amount <amount>", "Amount in SOL")
   .requiredOption("--recoverInfo <recoverInfo>", "Recover Info (Base64)")
@@ -250,19 +270,23 @@ cli
     recoverInfo.payload = Array.from(recoverInfo.payload);
     recoverInfo.deadline = new BN(recoverInfo.deadline, "hex");
 
-    const [globalAccountPubkey, _] = web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("GLOBAL")],
-      balancePayment.programId
-    );
-    const globalAccount = await balancePayment.account.globalAccount.fetch(
-      globalAccountPubkey
+    const namespaceId = new BN(opt.namespace_id);
+
+    const [namespaceAccountPubkey, _] = web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("NAMESPACE"), namespaceId.toArrayLike(Buffer, "le", 8)],
+      anchor.workspace.BalancePayment.programId
     );
 
+    const namespaceAccount =
+      await balancePayment.account.namespaceAccount.fetch(
+        namespaceAccountPubkey
+      );
+
     const tx = balancePayment.methods
-      .lock(recoverInfo, amount)
+      .lock(namespaceId, recoverInfo, amount)
       .accountsPartial({
         user,
-        bot: globalAccount.bot,
+        bot: namespaceAccount.bot,
       });
     await execute(tx);
   });
@@ -277,25 +301,44 @@ cli
     const user = new web3.PublicKey(opt.user);
     const nonce = new BN(opt.nonce);
     const amountToTransfer = sol(opt.amountToTransfer);
-    const [globalAccountPubkey, _] = web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("GLOBAL")],
+
+    const [lockAccountPubkey] = web3.PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("LOCK"),
+        user.toBuffer(),
+        nonce.toArrayLike(Buffer, "le", 8),
+      ],
       balancePayment.programId
     );
-    const globalAccount = await balancePayment.account.globalAccount.fetch(
-      globalAccountPubkey
+
+    const lockAccount =
+      await balancePayment.account.lockAccount.fetch(
+        lockAccountPubkey
+      );
+
+    const [namespaceAccountPubkey] = web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("NAMESPACE"), lockAccount.namespaceId.toArrayLike(Buffer, "le", 8)],
+      anchor.workspace.BalancePayment.programId
     );
+
+    const namespaceAccount =
+      await balancePayment.account.namespaceAccount.fetch(
+        namespaceAccountPubkey
+      );
+
     const tx = balancePayment.methods
       .settle(nonce, amountToTransfer)
       .accountsPartial({
         user,
-        treasury: globalAccount.treasury,
-        bot: globalAccount.bot,
+        treasury: namespaceAccount.treasury,
+        bot: namespaceAccount.bot,
       });
     await execute(tx);
   });
 
-  cli
+cli
   .command("pay")
+  .requiredOption("--namespace_id <namespace_id>", "Number")
   .requiredOption("--user <user>", "User Pubkey")
   .requiredOption("--amountToTransfer <amountToTransfer>", "Amount in SOL")
   .requiredOption("--recoverInfo <recoverInfo>", "Recover Info (Base64)")
@@ -311,20 +354,24 @@ cli
     recoverInfo.payload = Array.from(recoverInfo.payload);
     recoverInfo.deadline = new BN(recoverInfo.deadline, "hex");
 
-    const [globalAccountPubkey, _] = web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("GLOBAL")],
-      balancePayment.programId
-    );
-    const globalAccount = await balancePayment.account.globalAccount.fetch(
-      globalAccountPubkey
+    const namespaceId = new BN(opt.namespace_id);
+
+    const [namespaceAccountPubkey, _] = web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("NAMESPACE"), namespaceId.toArrayLike(Buffer, "le", 8)],
+      anchor.workspace.BalancePayment.programId
     );
 
+    const namespaceAccount =
+      await balancePayment.account.namespaceAccount.fetch(
+        namespaceAccountPubkey
+      );
+
     const tx = balancePayment.methods
-      .pay(recoverInfo, amountToTransfer)
+      .pay(namespaceId, recoverInfo, amountToTransfer)
       .accountsPartial({
         user,
-        treasury: globalAccount.treasury,
-        bot: globalAccount.bot,
+        treasury: namespaceAccount.treasury,
+        bot: namespaceAccount.bot,
       });
     await execute(tx);
   });
@@ -339,6 +386,16 @@ cli.command("show_global").action(async () => {
     globalAccountPubkey
   );
   showObj(globalAccount);
+});
+
+cli.command("show_namespaces").action(async () => {
+  const balancePayment = getBalancePaymentProgram();
+  const allNamespaces = await balancePayment.account.namespaceAccount.all();
+
+  allNamespaces.forEach((user) => {
+    showObj(user);
+    console.log("-".repeat(50));
+  });
 });
 
 cli.command("show_users").action(async () => {

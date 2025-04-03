@@ -65,11 +65,14 @@ impl MessageHandler {
         let machines = machine_pubkeys
             .into_iter()
             .map(|pubkey| {
-                (pubkey, Machine {
+                (
                     pubkey,
-                    status: DephyGachaStatus::Available,
-                    initial_request: None,
-                })
+                    Machine {
+                        pubkey,
+                        status: DephyGachaStatus::Available,
+                        initial_request: None,
+                    },
+                )
             })
             .collect();
 
@@ -335,16 +338,19 @@ impl MessageHandler {
                 };
 
                 self.client
-                    .send_event(mention, &DephyGachaMessage::Status {
-                        status: *to_status,
-                        reason: *reason,
-                        initial_request: event.id,
-                        payload: serde_json::to_string(&DephyGachaMessageStatusPayload {
-                            user: parsed_payload.user.clone(),
-                            nonce: parsed_payload.nonce,
-                            recover_info: parsed_payload.recover_info.clone(),
-                        })?,
-                    })
+                    .send_event(
+                        mention,
+                        &DephyGachaMessage::Status {
+                            status: *to_status,
+                            reason: *reason,
+                            initial_request: event.id,
+                            payload: serde_json::to_string(&DephyGachaMessageStatusPayload {
+                                user: parsed_payload.user.clone(),
+                                nonce: parsed_payload.nonce,
+                                recover_info: parsed_payload.recover_info.clone(),
+                            })?,
+                        },
+                    )
                     .await?;
 
                 // TODO: Should check this by machine api
@@ -355,17 +361,22 @@ impl MessageHandler {
                     tokio::spawn(async move {
                         tokio::time::sleep(std::time::Duration::from_secs(10)).await;
                         client
-                            .send_event(&mention, &DephyGachaMessage::Status {
-                                status: DephyGachaStatus::Available,
-                                reason: DephyGachaStatusReason::UserBehaviour,
-                                initial_request: event_id,
-                                payload: serde_json::to_string(&DephyGachaMessageStatusPayload {
-                                    user: parsed_payload.user.clone(),
-                                    nonce: parsed_payload.nonce,
-                                    recover_info: parsed_payload.recover_info,
-                                })
-                                .unwrap(),
-                            })
+                            .send_event(
+                                &mention,
+                                &DephyGachaMessage::Status {
+                                    status: DephyGachaStatus::Available,
+                                    reason: DephyGachaStatusReason::UserBehaviour,
+                                    initial_request: event_id,
+                                    payload: serde_json::to_string(
+                                        &DephyGachaMessageStatusPayload {
+                                            user: parsed_payload.user.clone(),
+                                            nonce: parsed_payload.nonce,
+                                            recover_info: parsed_payload.recover_info,
+                                        },
+                                    )
+                                    .unwrap(),
+                                },
+                            )
                             .await
                             .unwrap();
                     });
