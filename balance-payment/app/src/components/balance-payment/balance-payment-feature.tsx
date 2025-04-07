@@ -251,7 +251,7 @@ export default function BalancePaymentFeature() {
     const user = await program.account.userAccount.fetch(userAccountPubkey)
 
     const nonce = user.nonce
-    const recoverInfoPayload = serialNumberBytes
+    const recoverInfoPayload = selectedTab === "decharge" ? serialNumberBytes : []
     const deadline = new BN(Date.now() / 1000 + 60 * 30) // 30 minutes later
 
     const message = Buffer.concat([
@@ -575,7 +575,7 @@ export default function BalancePaymentFeature() {
           onClick={() => handleSelectTab('decharge')}
           disabled={isTabDisabled}
         >
-          Decharge
+          DeCharge
           {selectedTab === 'decharge' && isTabDisabled && <span className="ml-2 animate-pulse">(Processing...)</span>}
         </button>
         <button
@@ -671,7 +671,7 @@ export default function BalancePaymentFeature() {
           </button>
         )}
 
-        {serialNumberBytes && (
+        {selectedTab === 'decharge' && serialNumberBytes && (
           <div className="mt-4 p-4 bg-base-100 rounded-lg shadow-md">
             <h2 className="text-xl font-bold mb-2">Charger Serial Number</h2>
             <p className="break-all">{serialNumberStr}</p>
