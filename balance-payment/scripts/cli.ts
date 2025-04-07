@@ -73,7 +73,7 @@ const getUserKeypair = (keypairPath?: string): Keypair => {
   }
 };
 
-const generate64ByteUUIDPayload = (): Buffer => {
+const generate64ByteUUID = (): Buffer => {
   const uuid = uuidv4().replace(/-/g, "");
   const uuidBuffer = Buffer.from(uuid, "hex");
   const extendedBuffer = Buffer.concat([uuidBuffer, Buffer.alloc(48, 0)]);
@@ -183,12 +183,12 @@ cli
     const currentTimestamp = Math.floor(Date.now() / 1000);
     const deadline = new BN(currentTimestamp + Number(opt.minutes) * 60);
 
-    // Generate payload
-    const payload = generate64ByteUUIDPayload();
+    // Generate extraData
+    const extraData = generate64ByteUUID();
 
     // Create message
     const message = Buffer.concat([
-      payload,
+      extraData,
       namespaceId.toArrayLike(Buffer, "le", 8),
       nonce.toArrayLike(Buffer, "le", 8),
       deadline.toArrayLike(Buffer, "le", 8),
@@ -222,7 +222,7 @@ cli
     // Create recoverInfo
     const recoverInfo = {
       signature: Array.from(signature),
-      payload: Array.from(payload),
+      extraData: Array.from(extraData),
       deadline,
     };
 
@@ -249,7 +249,7 @@ cli
     );
 
     recoverInfo.signature = Array.from(recoverInfo.signature);
-    recoverInfo.payload = Array.from(recoverInfo.payload);
+    recoverInfo.extraData = Array.from(recoverInfo.extraData);
     recoverInfo.deadline = new BN(recoverInfo.deadline, "hex");
 
     const namespaceId = new BN(opt.namespace_id);
@@ -333,7 +333,7 @@ cli
     );
 
     recoverInfo.signature = Array.from(recoverInfo.signature);
-    recoverInfo.payload = Array.from(recoverInfo.payload);
+    recoverInfo.extraData = Array.from(recoverInfo.extraData);
     recoverInfo.deadline = new BN(recoverInfo.deadline, "hex");
 
     const namespaceId = new BN(opt.namespace_id);

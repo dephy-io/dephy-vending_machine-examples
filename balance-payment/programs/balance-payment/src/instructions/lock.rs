@@ -1,11 +1,13 @@
-use crate::{
-    constants::DISCRIMINATOR_SIZE,
-    errors::CustomError,
-    state::{LockAccount, NamespaceAccount, UserAccount},
-    utils,
-};
-use anchor_lang::{prelude::*, solana_program::keccak};
+use anchor_lang::prelude::*;
+use anchor_lang::solana_program::keccak;
 use bs58;
+
+use crate::constants::DISCRIMINATOR_SIZE;
+use crate::errors::CustomError;
+use crate::state::LockAccount;
+use crate::state::NamespaceAccount;
+use crate::state::UserAccount;
+use crate::utils;
 
 pub fn lock(
     ctx: Context<Lock>,
@@ -68,7 +70,7 @@ pub struct Lock<'info> {
 #[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct ED25519RecoverInfo {
     pub signature: [u8; 64],
-    pub payload: [u8; 64],
+    pub extra_data: [u8; 64],
     pub deadline: i64,
 }
 
@@ -81,7 +83,7 @@ impl ED25519RecoverInfo {
         pubkey: &Pubkey,
     ) -> Result<()> {
         let message = {
-            let mut data = self.payload.to_vec();
+            let mut data = self.extra_data.to_vec();
             data.extend_from_slice(&namespace_id.to_le_bytes());
             data.extend_from_slice(&nonce.to_le_bytes());
             data.extend_from_slice(&self.deadline.to_le_bytes());

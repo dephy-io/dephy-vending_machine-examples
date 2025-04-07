@@ -1,14 +1,12 @@
-use crate::{
-    errors::CustomError,
-    state::{NamespaceAccount, LockAccount, UserAccount},
-};
-use anchor_lang::{prelude::*, system_program};
+use anchor_lang::prelude::*;
+use anchor_lang::system_program;
 
-pub fn settle(
-    ctx: Context<Settle>,
-    _nonce: u64,
-    amount_to_transfer: u64,
-) -> Result<()> {
+use crate::errors::CustomError;
+use crate::state::LockAccount;
+use crate::state::NamespaceAccount;
+use crate::state::UserAccount;
+
+pub fn settle(ctx: Context<Settle>, _nonce: u64, amount_to_transfer: u64) -> Result<()> {
     let user_account = &mut ctx.accounts.user_account;
     let lock_account = &mut ctx.accounts.lock_account;
 
@@ -26,11 +24,9 @@ pub fn settle(
                 from: ctx.accounts.vault.to_account_info(),
                 to: ctx.accounts.treasury.to_account_info(),
             },
-            &[&[
-                b"VAULT",
-                ctx.accounts.user.key().as_ref(),
-                &[ctx.bumps.vault],
-            ]],
+            &[&[b"VAULT", ctx.accounts.user.key().as_ref(), &[ctx
+                .bumps
+                .vault]]],
         ),
         amount_to_transfer,
     )?;

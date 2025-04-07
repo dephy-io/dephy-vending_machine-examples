@@ -1,6 +1,7 @@
+use anchor_lang::prelude::*;
+
 use crate::errors::CustomError;
 use crate::state::NamespaceAccount;
-use anchor_lang::prelude::*;
 
 pub fn update_namespace(
     ctx: Context<UpdateNamespace>,

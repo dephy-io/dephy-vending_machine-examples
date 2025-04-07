@@ -46,7 +46,7 @@ export function useBalancePaymentProgram() {
     return lockAccountPubkey
   }
 
-  const generate64ByteUUIDPayload = () => {
+  const generate64ByteUUID = () => {
     const uuid = uuidv4().replace(/-/g, '') // 去掉连字符
     const uuidBuffer = Buffer.from(uuid, 'hex')
 
@@ -68,7 +68,7 @@ export function useBalancePaymentProgram() {
     getUserAccountPubkey,
     getUserVaultPubkey,
     getLockAccountPubkey,
-    generate64ByteUUIDPayload,
+    generate64ByteUUID,
     getSignMessagePrefix
   }
 }

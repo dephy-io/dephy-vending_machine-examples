@@ -1,7 +1,9 @@
-use crate::constants::DISCRIMINATOR_SIZE;
-use crate::state::{GlobalAccount, NamespaceAccount};
-use crate::errors::CustomError;
 use anchor_lang::prelude::*;
+
+use crate::constants::DISCRIMINATOR_SIZE;
+use crate::errors::CustomError;
+use crate::state::GlobalAccount;
+use crate::state::NamespaceAccount;
 
 pub fn create_namespace(ctx: Context<CreateNamespace>, name: String) -> Result<()> {
     require!(name.len() >= 3, CustomError::NameTooShort);

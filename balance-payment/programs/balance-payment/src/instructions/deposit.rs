@@ -1,5 +1,7 @@
+use anchor_lang::prelude::*;
+use anchor_lang::system_program;
+
 use crate::state::UserAccount;
-use anchor_lang::{prelude::*, system_program};
 
 pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
     system_program::transfer(
@@ -16,7 +18,6 @@ pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
 
     Ok(())
 }
-
 
 #[derive(Accounts)]
 pub struct Deposit<'info> {

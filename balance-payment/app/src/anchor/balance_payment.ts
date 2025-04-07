@@ -984,7 +984,7 @@ export type BalancePayment = {
             }
           },
           {
-            "name": "payload",
+            "name": "extraData",
             "type": {
               "array": [
                 "u8",

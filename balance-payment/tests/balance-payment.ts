@@ -216,11 +216,11 @@ describe("balance-payment", () => {
     );
 
     const nonce = userAccount.nonce;
-    const payload = generate64ByteUUIDPayload();
+    const extraData = generate64ByteUUIDPayload();
 
     const deadline = new BN(Date.now() / 1000 + 60 * 30); // 30 minutes later
     const message = Buffer.concat([
-      payload,
+      extraData,
       myTestNamespaceId.toArrayLike(Buffer, "le", 8),
       nonce.toArrayLike(Buffer, "le", 8),
       deadline.toArrayLike(Buffer, "le", 8),
@@ -244,7 +244,7 @@ describe("balance-payment", () => {
 
     const recoverInfo = {
       signature: Array.from(signature),
-      payload: Array.from(payload),
+      extraData: Array.from(extraData),
       deadline,
     };
 
@@ -319,11 +319,11 @@ describe("balance-payment", () => {
     );
 
     const nonce = userAccount.nonce;
-    const payload = generate64ByteUUIDPayload();
+    const extraData = generate64ByteUUIDPayload();
 
     const deadline = new BN(Date.now() / 1000 + 60 * 30); // 30 minutes later
     const message = Buffer.concat([
-      payload,
+      extraData,
       myTestNamespaceId.toArrayLike(Buffer, "le", 8),
       nonce.toArrayLike(Buffer, "le", 8),
       deadline.toArrayLike(Buffer, "le", 8),
@@ -347,7 +347,7 @@ describe("balance-payment", () => {
 
     const recoverInfo = {
       signature: Array.from(signature),
-      payload: Array.from(payload),
+      extraData: Array.from(extraData),
       deadline,
     };
 

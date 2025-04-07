@@ -1,6 +1,7 @@
+use anchor_lang::prelude::*;
+
 use crate::constants::DISCRIMINATOR_SIZE;
 use crate::state::GlobalAccount;
-use anchor_lang::prelude::*;
 
 pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
     let global_account = &mut ctx.accounts.global_account;

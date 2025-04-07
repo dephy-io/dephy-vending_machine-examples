@@ -1,5 +1,8 @@
-use crate::{errors::CustomError, state::UserAccount};
-use anchor_lang::{prelude::*, system_program};
+use anchor_lang::prelude::*;
+use anchor_lang::system_program;
+
+use crate::errors::CustomError;
+use crate::state::UserAccount;
 
 pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     let available_balance =
@@ -13,11 +16,9 @@ pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
                 from: ctx.accounts.vault.to_account_info(),
                 to: ctx.accounts.user.to_account_info(),
             },
-            &[&[
-                b"VAULT",
-                ctx.accounts.user.key().as_ref(),
-                &[ctx.bumps.vault],
-            ]],
+            &[&[b"VAULT", ctx.accounts.user.key().as_ref(), &[ctx
+                .bumps
+                .vault]]],
         ),
         amount,
     )?;

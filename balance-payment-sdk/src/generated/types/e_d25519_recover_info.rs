@@ -5,17 +5,15 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
-use borsh::BorshSerialize;
 use borsh::BorshDeserialize;
+use borsh::BorshSerialize;
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ED25519RecoverInfo {
-#[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
-pub signature: [u8; 64],
-#[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
-pub payload: [u8; 64],
-pub deadline: i64,
+    #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
+    pub signature: [u8; 64],
+    #[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::Bytes>"))]
+    pub extra_data: [u8; 64],
+    pub deadline: i64,
 }
-
-

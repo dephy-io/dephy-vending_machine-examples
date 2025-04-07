@@ -23,7 +23,7 @@ export default function BalancePaymentFeature() {
     getGlobalPubkey,
     getNamespaceAccountPubkey,
     getUserAccountPubkey,
-    generate64ByteUUIDPayload,
+    generate64ByteUUID,
     getSignMessagePrefix,
   } = useBalancePaymentProgram()
 
@@ -56,7 +56,7 @@ export default function BalancePaymentFeature() {
   const subscriptionRef = useRef<any>(null)
 
   useEffect(() => {
-    const { uuid, uuidBytes } = generate64ByteUUIDPayload()
+    const { uuid, uuidBytes } = generate64ByteUUID()
     setSerialNumberStr(uuid)
     setSerialNumberBytes(uuidBytes)
     fetchNamespaceAccount()
@@ -251,11 +251,11 @@ export default function BalancePaymentFeature() {
     const user = await program.account.userAccount.fetch(userAccountPubkey)
 
     const nonce = user.nonce
-    const recoverInfoPayload = selectedTab === "decharge" ? serialNumberBytes : []
+    const extraData = selectedTab === "decharge" ? serialNumberBytes : Buffer.alloc(64, 0)
     const deadline = new BN(Date.now() / 1000 + 60 * 30) // 30 minutes later
 
     const message = Buffer.concat([
-      serialNumberBytes,
+      extraData,
       namespaceId.toArrayLike(Buffer, 'le', 8),
       nonce.toArrayLike(Buffer, 'le', 8),
       deadline.toArrayLike(Buffer, 'le', 8),
@@ -270,7 +270,7 @@ export default function BalancePaymentFeature() {
       const signature = await signMessage(digest)
       recoverInfo = {
         signature: Array.from(signature),
-        payload: Array.from(recoverInfoPayload),
+        extraData: Array.from(extraData),
         deadline: deadline.toNumber(),
       }
       setRecoverInfo(recoverInfo)
@@ -732,8 +732,8 @@ export default function BalancePaymentFeature() {
                 <span className="break-all">{recoverInfo.signature.join(', ')}</span>
               </p>
               <p>
-                <span className="font-semibold">Payload:</span>{' '}
-                <span className="break-all">{recoverInfo.payload.join(', ')}</span>
+                <span className="font-semibold">Extra Data:</span>{' '}
+                <span className="break-all">{recoverInfo.extraData.join(', ')}</span>
               </p>
               <p>
                 <span className="font-semibold">Deadline:</span> <span>{recoverInfo.deadline.toString()}</span>

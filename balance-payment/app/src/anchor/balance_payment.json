@@ -978,7 +978,7 @@
             }
           },
           {
-            "name": "payload",
+            "name": "extra_data",
             "type": {
               "array": [
                 "u8",

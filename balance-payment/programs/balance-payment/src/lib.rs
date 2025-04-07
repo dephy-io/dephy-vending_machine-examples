@@ -30,7 +30,14 @@ pub mod balance_payment {
         new_bot: Option<Pubkey>,
         new_treasury: Option<Pubkey>,
     ) -> Result<()> {
-        instructions::update_namespace(ctx, _namespace_id, new_name, new_authority, new_bot, new_treasury)
+        instructions::update_namespace(
+            ctx,
+            _namespace_id,
+            new_name,
+            new_authority,
+            new_bot,
+            new_treasury,
+        )
     }
 
     pub fn register(ctx: Context<Register>) -> Result<()> {

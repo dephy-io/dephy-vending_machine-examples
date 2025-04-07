@@ -1,6 +1,7 @@
+use anchor_lang::prelude::*;
+
 use crate::constants::DISCRIMINATOR_SIZE;
 use crate::state::UserAccount;
-use anchor_lang::prelude::*;
 
 pub fn register(ctx: Context<Register>) -> Result<()> {
     let user_account = &mut ctx.accounts.user_account;

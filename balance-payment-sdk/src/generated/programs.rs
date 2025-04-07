@@ -7,7 +7,5 @@
 
 use solana_program::{pubkey, pubkey::Pubkey};
 
-
-  /// `balance_payment` program ID.
-  pub const BALANCE_PAYMENT_ID: Pubkey = pubkey!("8Pna6CZRquk83XT6ecisT9TYVfN3hY299GH2yEJk73dL");
-
+/// `balance_payment` program ID.
+pub const BALANCE_PAYMENT_ID: Pubkey = pubkey!("8Pna6CZRquk83XT6ecisT9TYVfN3hY299GH2yEJk73dL");

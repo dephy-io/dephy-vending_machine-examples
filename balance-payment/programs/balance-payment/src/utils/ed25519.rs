@@ -1,14 +1,16 @@
 // from https://github.com/stegaBOB/solana_ed25519_verify/blob/main/src/lib.rs
 
 use anchor_lang::solana_program::pubkey::Pubkey;
-use anyhow::{bail, Context};
+use anyhow::bail;
+use anyhow::Context;
 use arrayref::array_ref;
 use curve25519_dalek::scalar::Scalar;
 use sha2::Digest;
-use solana_zk_token_sdk::curve25519::{
-    edwards::{multiply_edwards, subtract_edwards, validate_edwards, PodEdwardsPoint},
-    scalar::PodScalar,
-};
+use solana_zk_token_sdk::curve25519::edwards::multiply_edwards;
+use solana_zk_token_sdk::curve25519::edwards::subtract_edwards;
+use solana_zk_token_sdk::curve25519::edwards::validate_edwards;
+use solana_zk_token_sdk::curve25519::edwards::PodEdwardsPoint;
+use solana_zk_token_sdk::curve25519::scalar::PodScalar;
 
 // funny number
 const EDWARDS_BASE_POINT: PodEdwardsPoint = PodEdwardsPoint([

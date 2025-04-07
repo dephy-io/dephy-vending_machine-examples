@@ -76,7 +76,7 @@ pub async fn check_eligible(
 
     // 1. concat message
     let message = {
-        let mut data = recover_info.payload.to_vec();
+        let mut data = recover_info.extra_data.to_vec();
         data.extend_from_slice(&namespace_id.to_le_bytes());
         data.extend_from_slice(&user_account.nonce.to_le_bytes());
         data.extend_from_slice(&recover_info.deadline.to_le_bytes());

@@ -50,4 +50,3 @@ impl<T> solana_program::decode_error::DecodeError<T> for BalancePaymentError {
         "BalancePaymentError"
     }
 }
-

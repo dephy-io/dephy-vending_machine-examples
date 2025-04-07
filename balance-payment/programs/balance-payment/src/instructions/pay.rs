@@ -1,10 +1,10 @@
-use crate::{
-    errors::CustomError,
-    state::{NamespaceAccount, UserAccount},
-};
-use anchor_lang::{prelude::*, system_program};
+use anchor_lang::prelude::*;
+use anchor_lang::system_program;
 
 use super::ED25519RecoverInfo;
+use crate::errors::CustomError;
+use crate::state::NamespaceAccount;
+use crate::state::UserAccount;
 
 pub fn pay(
     ctx: Context<Pay>,
@@ -34,11 +34,9 @@ pub fn pay(
                 from: ctx.accounts.vault.to_account_info(),
                 to: ctx.accounts.treasury.to_account_info(),
             },
-            &[&[
-                b"VAULT",
-                ctx.accounts.user.key().as_ref(),
-                &[ctx.bumps.vault],
-            ]],
+            &[&[b"VAULT", ctx.accounts.user.key().as_ref(), &[ctx
+                .bumps
+                .vault]]],
         ),
         amount_to_transfer,
     )?;
