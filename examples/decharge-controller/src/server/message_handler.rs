@@ -205,15 +205,12 @@ impl MessageHandler {
                     tracing::error!("Failed to lock error: {:?} event: {:?}", e, event);
 
                     self.client
-                        .send_event(
-                            mention,
-                            &DephyDechargeMessage::Request {
-                                to_status: DephyDechargeStatus::Available,
-                                reason: DephyDechargeStatusReason::LockFailed,
-                                initial_request: *initial_request,
-                                payload: payload.to_string(),
-                            },
-                        )
+                        .send_event(mention, &DephyDechargeMessage::Request {
+                            to_status: DephyDechargeStatus::Available,
+                            reason: DephyDechargeStatusReason::LockFailed,
+                            initial_request: *initial_request,
+                            payload: payload.to_string(),
+                        })
                         .await?
                 }
             }

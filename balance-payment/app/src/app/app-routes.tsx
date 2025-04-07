@@ -10,7 +10,7 @@ const ExamplesFeature = lazy(() => import('../components/balance-payment/balance
 const DashboardFeature = lazy(() => import('../components/dashboard/dashboard-feature'))
 
 const links: { label: string; path: string }[] = [
-  { label: 'Account', path: '/account' },
+  { label: 'Solana Account', path: '/account' },
   // { label: 'Clusters', path: '/clusters' },
   { label: 'Namespaces', path: '/namespaces' },
   { label: 'Examples', path: '/examples' },
