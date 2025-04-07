@@ -1,5 +1,5 @@
 {
-  "address": "GguVKxU88NUe3GLtns7Uaa6a8Pjb9USKq3WD1rjZnPS9",
+  "address": "8Pna6CZRquk83XT6ecisT9TYVfN3hY299GH2yEJk73dL",
   "metadata": {
     "name": "balance_payment",
     "version": "0.1.0",
@@ -7,6 +7,91 @@
     "description": "Created with Anchor"
   },
   "instructions": [
+    {
+      "name": "create_namespace",
+      "discriminator": [
+        205,
+        189,
+        35,
+        255,
+        214,
+        116,
+        25,
+        107
+      ],
+      "accounts": [
+        {
+          "name": "global_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  71,
+                  76,
+                  79,
+                  66,
+                  65,
+                  76
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "namespace_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  78,
+                  65,
+                  77,
+                  69,
+                  83,
+                  80,
+                  65,
+                  67,
+                  69
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "global_account.namespace_nonce",
+                "account": "GlobalAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority"
+        },
+        {
+          "name": "treasury"
+        },
+        {
+          "name": "bot"
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ]
+    },
     {
       "name": "deposit",
       "discriminator": [
@@ -118,15 +203,6 @@
           }
         },
         {
-          "name": "authority"
-        },
-        {
-          "name": "treasury"
-        },
-        {
-          "name": "bot"
-        },
-        {
           "name": "payer",
           "writable": true,
           "signer": true
@@ -152,19 +228,26 @@
       ],
       "accounts": [
         {
-          "name": "global_account",
+          "name": "namespace_account",
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  71,
-                  76,
-                  79,
-                  66,
+                  78,
                   65,
-                  76
+                  77,
+                  69,
+                  83,
+                  80,
+                  65,
+                  67,
+                  69
                 ]
+              },
+              {
+                "kind": "arg",
+                "path": "namespace_id"
               }
             ]
           }
@@ -245,7 +328,7 @@
           "name": "bot",
           "signer": true,
           "relations": [
-            "global_account"
+            "namespace_account"
           ]
         },
         {
@@ -260,6 +343,10 @@
       ],
       "args": [
         {
+          "name": "namespace_id",
+          "type": "u64"
+        },
+        {
           "name": "recover_info",
           "type": {
             "defined": {
@@ -269,6 +356,131 @@
         },
         {
           "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "pay",
+      "discriminator": [
+        119,
+        18,
+        216,
+        65,
+        192,
+        117,
+        122,
+        220
+      ],
+      "accounts": [
+        {
+          "name": "namespace_account",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  78,
+                  65,
+                  77,
+                  69,
+                  83,
+                  80,
+                  65,
+                  67,
+                  69
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "namespace_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  85,
+                  83,
+                  69,
+                  82
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user",
+          "writable": true
+        },
+        {
+          "name": "treasury",
+          "writable": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  86,
+                  65,
+                  85,
+                  76,
+                  84
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "bot",
+          "signer": true,
+          "relations": [
+            "namespace_account"
+          ]
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "namespace_id",
+          "type": "u64"
+        },
+        {
+          "name": "recover_info",
+          "type": {
+            "defined": {
+              "name": "ED25519RecoverInfo"
+            }
+          }
+        },
+        {
+          "name": "amount_to_transfer",
           "type": "u64"
         }
       ]
@@ -345,106 +557,6 @@
       "args": []
     },
     {
-      "name": "set_bot",
-      "discriminator": [
-        136,
-        185,
-        99,
-        236,
-        200,
-        131,
-        204,
-        118
-      ],
-      "accounts": [
-        {
-          "name": "global_account",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  71,
-                  76,
-                  79,
-                  66,
-                  65,
-                  76
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "signer": true,
-          "relations": [
-            "global_account"
-          ]
-        },
-        {
-          "name": "bot"
-        },
-        {
-          "name": "payer",
-          "writable": true,
-          "signer": true
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "set_treasury",
-      "discriminator": [
-        57,
-        97,
-        196,
-        95,
-        195,
-        206,
-        106,
-        136
-      ],
-      "accounts": [
-        {
-          "name": "global_account",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  71,
-                  76,
-                  79,
-                  66,
-                  65,
-                  76
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "signer": true,
-          "relations": [
-            "global_account"
-          ]
-        },
-        {
-          "name": "treasury"
-        },
-        {
-          "name": "payer",
-          "writable": true,
-          "signer": true
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "settle",
       "discriminator": [
         175,
@@ -458,19 +570,27 @@
       ],
       "accounts": [
         {
-          "name": "global_account",
+          "name": "namespace_account",
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  71,
-                  76,
-                  79,
-                  66,
+                  78,
                   65,
-                  76
+                  77,
+                  69,
+                  83,
+                  80,
+                  65,
+                  67,
+                  69
                 ]
+              },
+              {
+                "kind": "account",
+                "path": "lock_account.namespace_id",
+                "account": "LockAccount"
               }
             ]
           }
@@ -555,7 +675,7 @@
           "name": "bot",
           "signer": true,
           "relations": [
-            "global_account"
+            "namespace_account"
           ]
         },
         {
@@ -576,6 +696,89 @@
         {
           "name": "amount_to_transfer",
           "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "update_namespace",
+      "discriminator": [
+        61,
+        107,
+        207,
+        79,
+        239,
+        88,
+        36,
+        255
+      ],
+      "accounts": [
+        {
+          "name": "namespace_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  78,
+                  65,
+                  77,
+                  69,
+                  83,
+                  80,
+                  65,
+                  67,
+                  69
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "namespace_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "namespace_account"
+          ]
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "_namespace_id",
+          "type": "u64"
+        },
+        {
+          "name": "new_name",
+          "type": {
+            "option": "string"
+          }
+        },
+        {
+          "name": "new_authority",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "new_bot",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "new_treasury",
+          "type": {
+            "option": "pubkey"
+          }
         }
       ]
     },
@@ -686,6 +889,19 @@
       ]
     },
     {
+      "name": "NamespaceAccount",
+      "discriminator": [
+        131,
+        90,
+        249,
+        50,
+        43,
+        36,
+        38,
+        137
+      ]
+    },
+    {
       "name": "UserAccount",
       "discriminator": [
         211,
@@ -702,31 +918,46 @@
   "errors": [
     {
       "code": 6000,
+      "name": "NameTooShort",
+      "msg": "Name must be at least 3 characters long"
+    },
+    {
+      "code": 6001,
+      "name": "NoUpdateFields",
+      "msg": "No fields to update"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidPubkey",
+      "msg": "Invalid public key"
+    },
+    {
+      "code": 6003,
       "name": "Unauthorized",
       "msg": "Unauthorized access."
     },
     {
-      "code": 6001,
+      "code": 6004,
       "name": "InsufficientFunds",
       "msg": "Insufficient funds."
     },
     {
-      "code": 6002,
+      "code": 6005,
       "name": "SignatureFormatInvalid",
       "msg": "The signature format or recovery ID is incorrect."
     },
     {
-      "code": 6003,
+      "code": 6006,
       "name": "SignatureRecoveryFailed",
       "msg": "Failed to recover public key from signature."
     },
     {
-      "code": 6004,
+      "code": 6007,
       "name": "SignatureMismatch",
       "msg": "The recovered public key does not match the user's public key."
     },
     {
-      "code": 6005,
+      "code": 6008,
       "name": "SignatureExpired",
       "msg": "The signature is expired."
     }
@@ -768,16 +999,8 @@
         "kind": "struct",
         "fields": [
           {
-            "name": "authority",
-            "type": "pubkey"
-          },
-          {
-            "name": "bot",
-            "type": "pubkey"
-          },
-          {
-            "name": "treasury",
-            "type": "pubkey"
+            "name": "namespace_nonce",
+            "type": "u64"
           }
         ]
       }
@@ -788,8 +1011,48 @@
         "kind": "struct",
         "fields": [
           {
+            "name": "namespace_id",
+            "type": "u64"
+          },
+          {
             "name": "amount",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "NamespaceAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "id",
+            "type": "u64"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "bot",
+            "type": "pubkey"
+          },
+          {
+            "name": "treasury",
+            "type": "pubkey"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "updated_at",
+            "type": "i64"
           }
         ]
       }

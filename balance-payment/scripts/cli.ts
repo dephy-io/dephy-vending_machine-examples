@@ -11,7 +11,7 @@ import bs58 from "bs58";
 import os from "os";
 import path from "path";
 
-const SIGN_MESSAGE_PREFIX = "DePHY vending machine/Example:\n";
+const getSignMessagePrefix = (namespaceName: string) => `DePHY vending machine/${namespaceName}:\n`;
 
 const cli = new Command();
 
@@ -121,38 +121,6 @@ cli
     await execute(tx);
   });
 
-cli
-  .command("set_namespace_treasury")
-  .requiredOption("--namespace_id <namespace_id>", "Number")
-  .requiredOption("--treasury <treasury>", "Pubkey")
-  .action(async (opt) => {
-    const balancePayment = getBalancePaymentProgram();
-    const authority = provider.publicKey;
-    const tx = balancePayment.methods
-      .setNamespaceTreasury(new BN(opt.namespace_id))
-      .accountsPartial({
-        authority,
-        treasury: new web3.PublicKey(opt.treasury),
-      });
-    await execute(tx);
-  });
-
-cli
-  .command("set_namespace_bot")
-  .requiredOption("--namespace_id <namespace_id>", "Number")
-  .requiredOption("--bot <bot>", "Pubkey")
-  .action(async (opt) => {
-    const balancePayment = getBalancePaymentProgram();
-    const authority = provider.publicKey;
-    const tx = balancePayment.methods
-      .setNamespaceBot(new BN(opt.namespace_id))
-      .accountsPartial({
-        authority,
-        bot: new web3.PublicKey(opt.bot),
-      });
-    await execute(tx);
-  });
-
 cli.command("register").action(async () => {
   const balancePayment = getBalancePaymentProgram();
   const user = provider.publicKey;
@@ -197,6 +165,8 @@ cli
     "Path to keypair file (default: ~/.config/solana/id.json)"
   )
   .action(async (opt) => {
+    const balancePayment = getBalancePaymentProgram();
+
     // Get user's keypair
     const userKeypair = getUserKeypair(opt.keypair);
     const user = userKeypair.publicKey; // Use the public key from the provided keypair
@@ -224,11 +194,23 @@ cli
       deadline.toArrayLike(Buffer, "le", 8),
     ]);
 
+    const [namespaceAccountPubkey, _] = web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("NAMESPACE"), namespaceId.toArrayLike(Buffer, "le", 8)],
+      anchor.workspace.BalancePayment.programId
+    );
+
+    const namespaceAccount =
+      await balancePayment.account.namespaceAccount.fetch(
+        namespaceAccountPubkey
+      );
+
+    const signMessagePrefix = getSignMessagePrefix(namespaceAccount.name)
+
     // Hash the message and generate digest
     const messageHash = keccak("keccak256").update(message).digest();
     const hashedMessageBase58 = bs58.encode(messageHash);
     const digest = new TextEncoder().encode(
-      `${SIGN_MESSAGE_PREFIX}${hashedMessageBase58}`
+      `${signMessagePrefix}${hashedMessageBase58}`
     );
 
     // Get user's private key

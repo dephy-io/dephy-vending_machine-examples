@@ -10,7 +10,6 @@ import { finalizeEvent, generateSecretKey } from 'nostr-tools/pure'
 import { Relay } from 'nostr-tools/relay'
 import bs58 from 'bs58'
 
-const SIGN_MESSAGE_PREFIX = 'DePHY vending machine/Example:\n'
 const RELAY_ENDPOINT = import.meta.env.VITE_RELAY_ENDPOINT || 'ws://127.0.0.1:8000'
 
 // define charge status
@@ -19,13 +18,22 @@ type ChargeStatus = 'idle' | 'requested' | 'working' | 'available' | 'error'
 export default function BalancePaymentFeature() {
   const transactionToast = useTransactionToast()
   const { publicKey, wallet, signMessage } = useWallet()
-  const { program, getGlobalPubkey, getUserAccountPubkey, generate64ByteUUIDPayload } = useBalancePaymentProgram()
+  const {
+    program,
+    getGlobalPubkey,
+    getNamespaceAccountPubkey,
+    getUserAccountPubkey,
+    generate64ByteUUIDPayload,
+    getSignMessagePrefix,
+  } = useBalancePaymentProgram()
 
   const [selectedTab, setSelectedTab] = useState<'decharge' | 'gacha'>('decharge')
   const [recoverInfo, setRecoverInfo] = useState<any>()
   const [serialNumberStr, setSerialNumberStr] = useState<string | null>(null)
   const [serialNumberBytes, setSerialNumberBytes] = useState<Uint8Array | null>(null)
   const [globalAccount, setGlobalAccount] = useState<any>(null)
+  const [namespaceId, setNamespaceId] = useState<any>(new BN(0))
+  const [namespaceAccount, setNamespaceAccount] = useState<any>(null)
   const [userAccount, setUserAccount] = useState<any>(null)
   const [vaultBalance, setVaultBalance] = useState<number | null>(null)
   const [depositAmount, setDepositAmount] = useState<string>('')
@@ -51,6 +59,7 @@ export default function BalancePaymentFeature() {
     const { uuid, uuidBytes } = generate64ByteUUIDPayload()
     setSerialNumberStr(uuid)
     setSerialNumberBytes(uuidBytes)
+    fetchNamespaceAccount()
   }, [selectedTab])
 
   useEffect(() => {
@@ -89,18 +98,18 @@ export default function BalancePaymentFeature() {
   }, [])
 
   useEffect(() => {
-    if (!relay || !sk || !machinePubkey) return; // Wait until everything is ready
-  
-    listenFromRelay();
-  
+    if (!relay || !sk || !machinePubkey) return // Wait until everything is ready
+
+    listenFromRelay()
+
     // Cleanup subscription on unmount or when dependencies change
     return () => {
       if (subscriptionRef.current) {
-        subscriptionRef.current.close();
-        subscriptionRef.current = null;
+        subscriptionRef.current.close()
+        subscriptionRef.current = null
       }
-    };
-  }, [relay, sk, machinePubkey, selectedTab]); // Dependencies that affect the subscription  
+    }
+  }, [relay, sk, machinePubkey, selectedTab]) // Dependencies that affect the subscription
 
   const solToLamports = (sol: string): BN => {
     const solNumber = parseFloat(sol)
@@ -195,6 +204,11 @@ export default function BalancePaymentFeature() {
     if (isTabDisabled) {
       return
     }
+    if (tab === 'decharge') {
+      setNamespaceId(new BN(0))
+    } else {
+      setNamespaceId(new BN(1))
+    }
     setSelectedTab(tab)
     handleReset()
   }
@@ -207,11 +221,18 @@ export default function BalancePaymentFeature() {
     setGlobalAccount(global)
   }
 
+  const fetchNamespaceAccount = async () => {
+    if (!program) return
+
+    const namespaceAccountPubkey = getNamespaceAccountPubkey(namespaceId)
+    const namespace = await program.account.namespaceAccount.fetch(namespaceAccountPubkey)
+    setNamespaceAccount(namespace)
+  }
+
   const fetchUserAccount = async () => {
     if (!publicKey || !program) return
 
     const userAccountPubkey = getUserAccountPubkey(publicKey)
-    console.log('userAccountPubkey:', userAccountPubkey.toString())
     const user = await program.account.userAccount.fetch(userAccountPubkey)
     const userVaultBalance = await program.provider.connection.getBalance(user.vault)
     setVaultBalance(userVaultBalance)
@@ -219,7 +240,7 @@ export default function BalancePaymentFeature() {
   }
 
   const handleCharge = async () => {
-    if (!wallet || !publicKey || !signMessage || !serialNumberBytes) {
+    if (!wallet || !publicKey || !namespaceAccount || !signMessage || !serialNumberBytes) {
       console.error('Wallet not connected or serial number not generated')
       return
     }
@@ -233,10 +254,16 @@ export default function BalancePaymentFeature() {
     const payload = serialNumberBytes
     const deadline = new BN(Date.now() / 1000 + 60 * 30) // 30 minutes later
 
-    const message = Buffer.concat([payload, nonce.toArrayLike(Buffer, 'le', 8), deadline.toArrayLike(Buffer, 'le', 8)])
+    const message = Buffer.concat([
+      payload,
+      namespaceId.toArrayLike(Buffer, 'le', 8),
+      nonce.toArrayLike(Buffer, 'le', 8),
+      deadline.toArrayLike(Buffer, 'le', 8),
+    ])
     const messageHash = keccak('keccak256').update(message).digest()
     const hashedMessageBase58 = bs58.encode(messageHash)
-    const digest = new TextEncoder().encode(`${SIGN_MESSAGE_PREFIX}${hashedMessageBase58}`)
+    const signMessagePrefix = getSignMessagePrefix(namespaceAccount.name)
+    const digest = new TextEncoder().encode(`${signMessagePrefix}${hashedMessageBase58}`)
 
     let recoverInfo
     try {
@@ -538,6 +565,7 @@ export default function BalancePaymentFeature() {
 
   return publicKey ? (
     <div className="max-w-4xl mx-auto p-4">
+      <div>Namespace: {namespaceAccount?.name}</div>
       {/* Tab */}
       <div className="inline-flex p-1 bg-gray-100 rounded-full mb-8">
         <button

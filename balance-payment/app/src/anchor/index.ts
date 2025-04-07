@@ -20,8 +20,6 @@ export function getBalancePaymentProgramId(cluster: Cluster) {
   switch (cluster) {
     case 'devnet':
     case 'testnet':
-      // This is the program ID for the BalancePayment program on devnet and testnet.
-      return new PublicKey('GguVKxU88NUe3GLtns7Uaa6a8Pjb9USKq3WD1rjZnPS9')
     case 'mainnet-beta':
     default:
       return BALANCE_PAYMENT_PROGRAM_ID

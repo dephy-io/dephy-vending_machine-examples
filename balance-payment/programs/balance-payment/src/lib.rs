@@ -8,7 +8,7 @@ pub mod utils;
 
 use instructions::*;
 
-declare_id!("GguVKxU88NUe3GLtns7Uaa6a8Pjb9USKq3WD1rjZnPS9");
+declare_id!("8Pna6CZRquk83XT6ecisT9TYVfN3hY299GH2yEJk73dL");
 
 #[program]
 pub mod balance_payment {
@@ -22,12 +22,15 @@ pub mod balance_payment {
         instructions::create_namespace(ctx, name)
     }
 
-    pub fn set_namespace_bot(ctx: Context<SetNamespaceBot>, _namespace_id: u64) -> Result<()> {
-        instructions::set_namespace_bot(ctx, _namespace_id)
-    }
-
-    pub fn set_namespace_treasury(ctx: Context<SetNamespaceTreasury>, _namespace_id: u64) -> Result<()> {
-        instructions::set_namespace_treasury(ctx, _namespace_id)
+    pub fn update_namespace(
+        ctx: Context<UpdateNamespace>,
+        _namespace_id: u64,
+        new_name: Option<String>,
+        new_authority: Option<Pubkey>,
+        new_bot: Option<Pubkey>,
+        new_treasury: Option<Pubkey>,
+    ) -> Result<()> {
+        instructions::update_namespace(ctx, _namespace_id, new_name, new_authority, new_bot, new_treasury)
     }
 
     pub fn register(ctx: Context<Register>) -> Result<()> {
@@ -42,7 +45,12 @@ pub mod balance_payment {
         instructions::withdraw(ctx, amount)
     }
 
-    pub fn lock(ctx: Context<Lock>, namespace_id: u64, recover_info: ED25519RecoverInfo, amount: u64) -> Result<()> {
+    pub fn lock(
+        ctx: Context<Lock>,
+        namespace_id: u64,
+        recover_info: ED25519RecoverInfo,
+        amount: u64,
+    ) -> Result<()> {
         instructions::lock(ctx, namespace_id, recover_info, amount)
     }
 
@@ -50,7 +58,12 @@ pub mod balance_payment {
         instructions::settle(ctx, _nonce, amount_to_transfer)
     }
 
-    pub fn pay(ctx: Context<Pay>, namespace_id: u64, recover_info: ED25519RecoverInfo, amount_to_transfer: u64) -> Result<()> {
+    pub fn pay(
+        ctx: Context<Pay>,
+        namespace_id: u64,
+        recover_info: ED25519RecoverInfo,
+        amount_to_transfer: u64,
+    ) -> Result<()> {
         instructions::pay(ctx, namespace_id, recover_info, amount_to_transfer)
     }
 }

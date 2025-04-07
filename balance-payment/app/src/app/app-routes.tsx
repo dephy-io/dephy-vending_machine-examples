@@ -5,20 +5,23 @@ import { Navigate, RouteObject, useRoutes } from 'react-router-dom'
 const AccountListFeature = lazy(() => import('../components/account/account-list-feature'))
 const AccountDetailFeature = lazy(() => import('../components/account/account-detail-feature'))
 const ClusterFeature = lazy(() => import('../components/cluster/cluster-feature'))
-const BalancePaymentFeature = lazy(() => import('../components/balance-payment/balance-payment-feature'))
+const NamespacesFeature = lazy(() => import('../components/namespaces/namespaces-feature'))
+const ExamplesFeature = lazy(() => import('../components/balance-payment/balance-payment-feature'))
 const DashboardFeature = lazy(() => import('../components/dashboard/dashboard-feature'))
 
 const links: { label: string; path: string }[] = [
   { label: 'Account', path: '/account' },
-  { label: 'Clusters', path: '/clusters' },
-  { label: 'Balance Payment Program', path: '/program' },
+  // { label: 'Clusters', path: '/clusters' },
+  { label: 'Namespaces', path: '/namespaces' },
+  { label: 'Examples', path: '/examples' },
 ]
 
 const routes: RouteObject[] = [
   { path: '/account/', element: <AccountListFeature /> },
   { path: '/account/:address', element: <AccountDetailFeature /> },
-  { path: '/program', element: <BalancePaymentFeature /> },
+  { path: '/examples', element: <ExamplesFeature /> },
   { path: '/clusters', element: <ClusterFeature /> },
+  { path: '/namespaces', element: <NamespacesFeature /> },
 ]
 
 export function AppRoutes() {

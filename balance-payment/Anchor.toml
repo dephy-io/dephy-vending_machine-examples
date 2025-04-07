@@ -5,7 +5,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-balance_payment = "GguVKxU88NUe3GLtns7Uaa6a8Pjb9USKq3WD1rjZnPS9"
+balance_payment = "8Pna6CZRquk83XT6ecisT9TYVfN3hY299GH2yEJk73dL"
 
 [registry]
 url = "https://api.apr.dev"

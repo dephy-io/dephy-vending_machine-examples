@@ -1,7 +1,6 @@
 pub mod initialize;
 pub mod create_namespace;
-pub mod set_namespace_bot;
-pub mod set_namespace_treasury;
+pub mod update_namespace;
 pub mod register;
 pub mod deposit;
 pub mod withdraw;
@@ -11,8 +10,7 @@ pub mod pay;
 
 pub use initialize::*;
 pub use create_namespace::*;
-pub use set_namespace_bot::*;
-pub use set_namespace_treasury::*;
+pub use update_namespace::*;
 pub use register::*;
 pub use deposit::*;
 pub use withdraw::*;

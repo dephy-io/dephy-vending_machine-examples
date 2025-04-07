@@ -2,6 +2,12 @@ use anchor_lang::error_code;
 
 #[error_code]
 pub enum CustomError {
+    #[msg("Name must be at least 3 characters long")]
+    NameTooShort,
+    #[msg("No fields to update")]
+    NoUpdateFields,
+    #[msg("Invalid public key")]
+    InvalidPubkey,
     #[msg("Unauthorized access.")]
     Unauthorized,
     #[msg("Insufficient funds.")]

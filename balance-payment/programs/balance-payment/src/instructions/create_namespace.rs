@@ -1,16 +1,26 @@
 use crate::constants::DISCRIMINATOR_SIZE;
 use crate::state::{GlobalAccount, NamespaceAccount};
+use crate::errors::CustomError;
 use anchor_lang::prelude::*;
 
 pub fn create_namespace(ctx: Context<CreateNamespace>, name: String) -> Result<()> {
+    require!(name.len() >= 3, CustomError::NameTooShort);
+
+    let clock = Clock::get()?;
+
     let global_account = &mut ctx.accounts.global_account;
-    global_account.namespace_nonce += 1;
 
     let namespace_account = &mut ctx.accounts.namespace_account;
+    namespace_account.id = global_account.namespace_nonce;
     namespace_account.name = name;
     namespace_account.authority = ctx.accounts.authority.key();
     namespace_account.bot = ctx.accounts.bot.key();
     namespace_account.treasury = ctx.accounts.treasury.key();
+    namespace_account.created_at = clock.unix_timestamp;
+    namespace_account.updated_at = clock.unix_timestamp;
+
+    global_account.namespace_nonce += 1;
+
     Ok(())
 }
 

@@ -7,7 +7,8 @@ import keccak from "keccak";
 import * as ed from "@noble/ed25519";
 import bs58 from "bs58";
 
-const SIGN_MESSAGE_PREFIX = "DePHY vending machine/Example:\n";
+const getSignMessagePrefix = (namespaceName: string) =>
+  `DePHY vending machine/${namespaceName}:\n`;
 
 const sol = function (n: number) {
   return new BN(n * web3.LAMPORTS_PER_SOL);
@@ -120,6 +121,7 @@ describe("balance-payment", () => {
     const namespace = await program.account.namespaceAccount.fetch(
       getNamespaceAccountPubkey(myTestNamespaceId)
     );
+
     assert.equal(
       namespace.authority.toString(),
       authority.publicKey.toString()
@@ -128,38 +130,22 @@ describe("balance-payment", () => {
     assert.equal(namespace.bot.toString(), tempBot.toString());
   });
 
-  it("set namespace treasury", async () => {
+  it("update namespace", async () => {
     const { signature } = await program.methods
-      .setNamespaceTreasury(myTestNamespaceId)
+      .updateNamespace(myTestNamespaceId, null, null, bot.publicKey, treasury.publicKey)
       .accountsPartial({
         authority: authority.publicKey,
-        treasury: treasury.publicKey,
       })
       .signers([authority])
       .rpcAndKeys();
-    console.log("set_namespace_treasury:", signature);
+    console.log("update_namespace:", signature);
 
     const namespace = await program.account.namespaceAccount.fetch(
       getNamespaceAccountPubkey(myTestNamespaceId)
     );
-    assert.equal(namespace.treasury.toString(), treasury.publicKey.toString());
-  });
 
-  it("set bot", async () => {
-    const { signature } = await program.methods
-      .setNamespaceBot(myTestNamespaceId)
-      .accountsPartial({
-        authority: authority.publicKey,
-        bot: bot.publicKey,
-      })
-      .signers([authority])
-      .rpcAndKeys();
-    console.log("set_bot:", signature);
-
-    const namespace = await program.account.namespaceAccount.fetch(
-      getNamespaceAccountPubkey(myTestNamespaceId)
-    );
     assert.equal(namespace.bot.toString(), bot.publicKey.toString());
+    assert.equal(namespace.treasury.toString(), treasury.publicKey.toString());
   });
 
   it("register", async () => {
@@ -240,10 +226,16 @@ describe("balance-payment", () => {
       deadline.toArrayLike(Buffer, "le", 8),
     ]);
 
+    const namespace = await program.account.namespaceAccount.fetch(
+      getNamespaceAccountPubkey(myTestNamespaceId)
+    );
+
+    const signMessagePrefix = getSignMessagePrefix(namespace.name);
+
     const messageHash = keccak("keccak256").update(message).digest();
     const hashedMessageBase58 = bs58.encode(messageHash);
     const digest = new TextEncoder().encode(
-      `${SIGN_MESSAGE_PREFIX}${hashedMessageBase58}`
+      `${signMessagePrefix}${hashedMessageBase58}`
     );
 
     const privateKey = user.secretKey.slice(0, 32);
@@ -337,10 +329,16 @@ describe("balance-payment", () => {
       deadline.toArrayLike(Buffer, "le", 8),
     ]);
 
+    const namespace = await program.account.namespaceAccount.fetch(
+      getNamespaceAccountPubkey(myTestNamespaceId)
+    );
+
+    const signMessagePrefix = getSignMessagePrefix(namespace.name);
+
     const messageHash = keccak("keccak256").update(message).digest();
     const hashedMessageBase58 = bs58.encode(messageHash);
     const digest = new TextEncoder().encode(
-      `${SIGN_MESSAGE_PREFIX}${hashedMessageBase58}`
+      `${signMessagePrefix}${hashedMessageBase58}`
     );
 
     const privateKey = user.secretKey.slice(0, 32);

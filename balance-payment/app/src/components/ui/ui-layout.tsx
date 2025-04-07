@@ -37,7 +37,7 @@ export function UiLayout({ children, links }: { children: ReactNode; links: { la
             )}
           </div>
           <Link className="btn btn-ghost normal-case text-xl" to="/">
-            Balance Payment
+            DePHY
           </Link>
         </div>
         <div className="navbar-center hidden lg:flex">

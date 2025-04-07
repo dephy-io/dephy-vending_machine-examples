@@ -1,6 +1,6 @@
 import { getBalancePaymentProgram, getBalancePaymentProgramId } from '../../anchor'
 import { Cluster } from '@solana/web3.js'
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from 'uuid'
 import { useMemo } from 'react'
 import { useCluster } from '../cluster/cluster-data-access'
 import { useAnchorProvider } from '../solana/solana-provider'
@@ -13,60 +13,62 @@ export function useBalancePaymentProgram() {
   const program = useMemo(() => getBalancePaymentProgram(provider, programId), [provider, programId])
 
   const getGlobalPubkey = () => {
-    const [globalAccountPubkey, _] = web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("GLOBAL")],
-      programId
-    );
-    return globalAccountPubkey;
+    const [globalAccountPubkey, _] = web3.PublicKey.findProgramAddressSync([Buffer.from('GLOBAL')], programId)
+    return globalAccountPubkey
+  }
+
+  const getNamespaceAccountPubkey = (namespaceId: BN) => {
+    const [namespaceAccountPubkey, _] = web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('NAMESPACE'), namespaceId.toArrayLike(Buffer, 'le', 8)],
+      programId,
+    )
+    return namespaceAccountPubkey
   }
 
   const getUserAccountPubkey = (user: web3.PublicKey) => {
     const [userAccountPubkey, _] = web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("USER"), user.toBuffer()],
-      programId
-    );
-    return userAccountPubkey;
-  };
+      [Buffer.from('USER'), user.toBuffer()],
+      programId,
+    )
+    return userAccountPubkey
+  }
 
   const getUserVaultPubkey = (user: web3.PublicKey) => {
-    const [vaultPubkey, _] = web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("VAULT"), user.toBuffer()],
-      programId
-    );
-    return vaultPubkey;
-  };
+    const [vaultPubkey, _] = web3.PublicKey.findProgramAddressSync([Buffer.from('VAULT'), user.toBuffer()], programId)
+    return vaultPubkey
+  }
 
   const getLockAccountPubkey = (user: web3.PublicKey, nonce: BN) => {
     const [lockAccountPubkey, _] = web3.PublicKey.findProgramAddressSync(
-      [
-        Buffer.from("LOCK"),
-        user.toBuffer(),
-        nonce.toArrayLike(Buffer, "le", 8),
-      ],
-      program.programId
-    );
-    return lockAccountPubkey;
-  };
+      [Buffer.from('LOCK'), user.toBuffer(), nonce.toArrayLike(Buffer, 'le', 8)],
+      program.programId,
+    )
+    return lockAccountPubkey
+  }
 
   const generate64ByteUUIDPayload = () => {
-    const uuid = uuidv4().replace(/-/g, ""); // 去掉连字符
-    const uuidBuffer = Buffer.from(uuid, "hex");
+    const uuid = uuidv4().replace(/-/g, '') // 去掉连字符
+    const uuidBuffer = Buffer.from(uuid, 'hex')
 
-    const extendedBuffer = Buffer.concat([uuidBuffer, Buffer.alloc(48, 0)]);
+    const extendedBuffer = Buffer.concat([uuidBuffer, Buffer.alloc(48, 0)])
 
     return {
       uuid,
-      uuidBytes: extendedBuffer
-    };
-  };
+      uuidBytes: extendedBuffer,
+    }
+  }
+
+  const getSignMessagePrefix = (namespaceName: string) => `DePHY vending machine/${namespaceName}:\n`
 
   return {
     program,
     programId,
     getGlobalPubkey,
+    getNamespaceAccountPubkey,
     getUserAccountPubkey,
     getUserVaultPubkey,
     getLockAccountPubkey,
-    generate64ByteUUIDPayload
+    generate64ByteUUIDPayload,
+    getSignMessagePrefix
   }
 }
