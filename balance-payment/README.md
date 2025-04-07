@@ -67,7 +67,19 @@ This command will deploy the program to the local Solana validator and output th
 Initializes the program with an authority, treasury, and bot.
 
 ```bash
-anchor run cli -- initialize --authority $(solana address) --treasury $(solana address) --bot 9nyhqLqmbWoUuNXA1XCVnEqiS9UWvxFYa1yynVVFzR4D
+anchor run cli -- initialize
+```
+
+# Create Namespace
+
+Initializes the program with an authority, treasury, and bot.
+
+```bash
+anchor run cli -- create_namespace --name DeCharge --authority $(solana address) --treasury $(solana address) --bot 9nyhqLqmbWoUuNXA1XCVnEqiS9UWvxFYa1yynVVFzR4D
+```
+
+```bash
+anchor run cli -- create_namespace --name Gacha --authority $(solana address) --treasury $(solana address) --bot 9nyhqLqmbWoUuNXA1XCVnEqiS9UWvxFYa1yynVVFzR4D 
 ```
 
 - `--authority`: The public key of the authority.

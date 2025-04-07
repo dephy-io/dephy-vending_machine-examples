@@ -222,7 +222,7 @@ cli
     // Create recoverInfo
     const recoverInfo = {
       signature: Array.from(signature),
-      extraData: Array.from(extraData),
+      extra_data: Array.from(extraData),
       deadline,
     };
 
@@ -249,7 +249,7 @@ cli
     );
 
     recoverInfo.signature = Array.from(recoverInfo.signature);
-    recoverInfo.extraData = Array.from(recoverInfo.extraData);
+    recoverInfo.extra_data = Array.from(recoverInfo.extra_data);
     recoverInfo.deadline = new BN(recoverInfo.deadline, "hex");
 
     const namespaceId = new BN(opt.namespace_id);
@@ -333,7 +333,7 @@ cli
     );
 
     recoverInfo.signature = Array.from(recoverInfo.signature);
-    recoverInfo.extraData = Array.from(recoverInfo.extraData);
+    recoverInfo.extra_data = Array.from(recoverInfo.extra_data);
     recoverInfo.deadline = new BN(recoverInfo.deadline, "hex");
 
     const namespaceId = new BN(opt.namespace_id);

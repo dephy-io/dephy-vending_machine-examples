@@ -11,6 +11,7 @@ import { Relay } from 'nostr-tools/relay'
 import bs58 from 'bs58'
 
 const RELAY_ENDPOINT = import.meta.env.VITE_RELAY_ENDPOINT || 'ws://127.0.0.1:8000'
+const MACHINE_PUBKEY = 'd041ea9854f2117b82452457c4e6d6593a96524027cd4032d2f40046deb78d93'
 
 // define charge status
 type ChargeStatus = 'idle' | 'requested' | 'working' | 'available' | 'error'
@@ -18,17 +19,10 @@ type ChargeStatus = 'idle' | 'requested' | 'working' | 'available' | 'error'
 export default function BalancePaymentFeature() {
   const transactionToast = useTransactionToast()
   const { publicKey, wallet, signMessage } = useWallet()
-  const {
-    program,
-    getGlobalPubkey,
-    getNamespaceAccountPubkey,
-    getUserAccountPubkey,
-    generate64ByteUUID,
-    getSignMessagePrefix,
-  } = useBalancePaymentProgram()
+  const { program, getGlobalPubkey, getNamespaceAccountPubkey, getUserAccountPubkey, getSignMessagePrefix } =
+    useBalancePaymentProgram()
 
   const [selectedTab, setSelectedTab] = useState<'decharge' | 'gacha'>('decharge')
-  const [recoverInfo, setRecoverInfo] = useState<any>()
   const [serialNumberStr, setSerialNumberStr] = useState<string | null>(null)
   const [serialNumberBytes, setSerialNumberBytes] = useState<Uint8Array | null>(null)
   const [globalAccount, setGlobalAccount] = useState<any>(null)
@@ -38,9 +32,6 @@ export default function BalancePaymentFeature() {
   const [vaultBalance, setVaultBalance] = useState<number | null>(null)
   const [depositAmount, setDepositAmount] = useState<string>('')
   const [withdrawAmount, setWithdrawAmount] = useState<string>('')
-  const [machinePubkey, setMachinePubkey] = useState<string>(
-    'd041ea9854f2117b82452457c4e6d6593a96524027cd4032d2f40046deb78d93',
-  )
   const [relay, setRelay] = useState<Relay>()
   const [sk, setSk] = useState<Uint8Array | null>(null)
   const [chargeStatus, setChargeStatus] = useState<ChargeStatus>('idle')
@@ -56,9 +47,9 @@ export default function BalancePaymentFeature() {
   const subscriptionRef = useRef<any>(null)
 
   useEffect(() => {
-    const { uuid, uuidBytes } = generate64ByteUUID()
-    setSerialNumberStr(uuid)
-    setSerialNumberBytes(uuidBytes)
+    // const { uuid, uuidBytes } = generate64ByteUUID()
+    // setSerialNumberStr(uuid)
+    // setSerialNumberBytes(uuidBytes)
     fetchNamespaceAccount()
   }, [selectedTab])
 
@@ -98,7 +89,7 @@ export default function BalancePaymentFeature() {
   }, [])
 
   useEffect(() => {
-    if (!relay || !sk || !machinePubkey) return // Wait until everything is ready
+    if (!relay || !sk || !MACHINE_PUBKEY) return // Wait until everything is ready
 
     listenFromRelay()
 
@@ -109,7 +100,7 @@ export default function BalancePaymentFeature() {
         subscriptionRef.current = null
       }
     }
-  }, [relay, sk, machinePubkey, selectedTab]) // Dependencies that affect the subscription
+  }, [relay, sk, MACHINE_PUBKEY, selectedTab]) // Dependencies that affect the subscription
 
   const solToLamports = (sol: string): BN => {
     const solNumber = parseFloat(sol)
@@ -240,8 +231,14 @@ export default function BalancePaymentFeature() {
   }
 
   const handleCharge = async () => {
-    if (!wallet || !publicKey || !namespaceAccount || !signMessage || !serialNumberBytes) {
-      console.error('Wallet not connected or serial number not generated')
+    if (
+      !wallet ||
+      !publicKey ||
+      !namespaceAccount ||
+      !signMessage ||
+      (selectedTab === 'decharge' && !serialNumberBytes)
+    ) {
+      console.error('Wallet not connected or serial number not selected when charging')
       return
     }
 
@@ -251,7 +248,7 @@ export default function BalancePaymentFeature() {
     const user = await program.account.userAccount.fetch(userAccountPubkey)
 
     const nonce = user.nonce
-    const extraData = selectedTab === "decharge" ? serialNumberBytes : Buffer.alloc(64, 0)
+    const extraData = selectedTab === 'decharge' ? serialNumberBytes! : Buffer.alloc(64, 0)
     const deadline = new BN(Date.now() / 1000 + 60 * 30) // 30 minutes later
 
     const message = Buffer.concat([
@@ -270,10 +267,9 @@ export default function BalancePaymentFeature() {
       const signature = await signMessage(digest)
       recoverInfo = {
         signature: Array.from(signature),
-        extraData: Array.from(extraData),
+        extra_data: Array.from(extraData),
         deadline: deadline.toNumber(),
       }
-      setRecoverInfo(recoverInfo)
     } catch (error) {
       toast.error(`Error signing message: ${error}`)
       setIsChargeDisabled(false)
@@ -289,7 +285,7 @@ export default function BalancePaymentFeature() {
   }
 
   const handleStop = async () => {
-    if (!sk || !relay || !machinePubkey || !initialRequestId || !initialPayload) {
+    if (!sk || !relay || !MACHINE_PUBKEY || !initialRequestId || !initialPayload) {
       toast.error('Not initialized')
       return
     }
@@ -312,7 +308,7 @@ export default function BalancePaymentFeature() {
         created_at: Math.floor(Date.now() / 1000),
         tags: [
           ['s', sTag],
-          ['p', machinePubkey],
+          ['p', MACHINE_PUBKEY],
         ],
         content,
       }
@@ -331,8 +327,8 @@ export default function BalancePaymentFeature() {
       toast.error('sk not initialized')
       return
     }
-    if (!machinePubkey) {
-      toast.error('machinePubkey not initialized')
+    if (!MACHINE_PUBKEY) {
+      toast.error('MACHINE_PUBKEY not initialized')
       return
     }
     if (!relay) {
@@ -366,7 +362,7 @@ export default function BalancePaymentFeature() {
       created_at: Math.floor(Date.now() / 1000),
       tags: [
         ['s', sTag],
-        ['p', machinePubkey],
+        ['p', MACHINE_PUBKEY],
       ],
       content,
     }
@@ -379,8 +375,8 @@ export default function BalancePaymentFeature() {
       toast.error('sk not initialized')
       return
     }
-    if (!machinePubkey) {
-      toast.error('machinePubkey not initialized')
+    if (!MACHINE_PUBKEY) {
+      toast.error('MACHINE_PUBKEY not initialized')
       return
     }
     if (!relay) {
@@ -402,7 +398,7 @@ export default function BalancePaymentFeature() {
           kinds: [1573],
           since: Math.floor(Date.now() / 1000),
           '#s': [sTag],
-          '#p': [machinePubkey],
+          '#p': [MACHINE_PUBKEY],
         },
       ],
       {
@@ -446,7 +442,6 @@ export default function BalancePaymentFeature() {
       subscriptionRef.current = null
     }
 
-    setRecoverInfo(null)
     setEvents([])
     setChargeStatus('idle')
     setIsChargeDisabled(false)
@@ -657,8 +652,42 @@ export default function BalancePaymentFeature() {
       </div>
 
       <div className="mb-8 p-4 bg-base-200 rounded-lg shadow-md">
-        <h2 className="text-xl font-bold mb-4">{selectedTab === 'decharge' ? 'Charge' : 'Gacha'}</h2>
+        <h2 className="text-xl font-bold mb-4">{selectedTab === 'decharge' ? 'DeCharge Machine' : 'Gacha Machine'}</h2>
+
         <ProgressBar />
+
+        {selectedTab === 'decharge' && (
+          <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              '0ab792988ed2429c878150a2b2f3dc8a',
+              '45779832f0d945f392ecff9067cf6f03',
+              'eef86d9253134126ac18fff1561cd157',
+              '7fdc74a8ccbd48c4952aac384d662bc8',
+            ].map((serial, index) => (
+              <button
+                key={index}
+                className={`p-4 rounded-lg shadow-md text-center transition-all ${
+                  serialNumberStr === serial ? 'bg-green-600 text-white' : 'bg-base-100 hover:bg-base-300'
+                } ${
+                  chargeStatus !== 'idle' && chargeStatus !== 'available' && serialNumberStr !== serial
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'cursor-pointer'
+                }`}
+                onClick={() => {
+                  if (chargeStatus === 'idle' || chargeStatus === 'available') {
+                    setSerialNumberStr(serial)
+                    const extendedSerialNumber = Buffer.concat([Buffer.from(serial, 'hex'), Buffer.alloc(48, 0)])
+                    setSerialNumberBytes(extendedSerialNumber)
+                  }
+                }}
+                disabled={chargeStatus !== 'idle' && chargeStatus !== 'available' && serialNumberStr !== serial}
+              >
+                <div className="font-semibold mb-2">🔌 Charger {index + 1}</div>
+                <div className="text-sm break-all">{serial}</div>
+              </button>
+            ))}
+          </div>
+        )}
 
         {events.map((event, index) => (
           <EventJsonViewer key={index} event={event} index={index} />
@@ -671,31 +700,19 @@ export default function BalancePaymentFeature() {
           </button>
         )}
 
-        {selectedTab === 'decharge' && serialNumberBytes && (
-          <div className="mt-4 p-4 bg-base-100 rounded-lg shadow-md">
-            <h2 className="text-xl font-bold mb-2">Charger Serial Number</h2>
-            <p className="break-all">{serialNumberStr}</p>
-          </div>
-        )}
-
-        <div className="mt-4 p-4 bg-base-100 rounded-lg shadow-md">
-          <h2 className="text-xl font-bold mb-2">Machine Pubkey</h2>
-          <input
-            type="text"
-            placeholder="Enter Machine Pubkey"
-            value={machinePubkey || ''}
-            onChange={(e) => setMachinePubkey(e.target.value)}
-            className="input input-bordered w-full placeholder:text-sm mt-4"
-          />
-        </div>
-
         {/* charge */}
         <button
           className={`btn w-full mt-4 border-none ${
             selectedTab === 'decharge' ? 'bg-blue-500 hover:bg-blue-600' : 'bg-pink-500 hover:bg-pink-600'
           } text-white`}
           onClick={handleCharge}
-          disabled={!wallet || !serialNumberBytes || !machinePubkey || isChargeDisabled || chargeStatus !== 'idle'}
+          disabled={
+            !wallet ||
+            (selectedTab === 'decharge' && !serialNumberBytes) ||
+            !MACHINE_PUBKEY ||
+            isChargeDisabled ||
+            chargeStatus !== 'idle'
+          }
         >
           {selectedTab === 'decharge' ? 'Start Charge' : 'Play Gacha'}
         </button>
@@ -721,25 +738,6 @@ export default function BalancePaymentFeature() {
               'Stop Charge'
             )}
           </button>
-        )}
-
-        {recoverInfo && (
-          <div className="mt-6 p-6 bg-base-100 rounded-lg shadow-md">
-            <h2 className="text-xl font-bold mb-4">Recover Info</h2>
-            <div className="space-y-2">
-              <p>
-                <span className="font-semibold">Signature:</span>{' '}
-                <span className="break-all">{recoverInfo.signature.join(', ')}</span>
-              </p>
-              <p>
-                <span className="font-semibold">Extra Data:</span>{' '}
-                <span className="break-all">{recoverInfo.extraData.join(', ')}</span>
-              </p>
-              <p>
-                <span className="font-semibold">Deadline:</span> <span>{recoverInfo.deadline.toString()}</span>
-              </p>
-            </div>
-          </div>
         )}
       </div>
     </div>

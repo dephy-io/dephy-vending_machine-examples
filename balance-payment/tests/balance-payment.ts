@@ -71,7 +71,7 @@ describe("balance-payment", () => {
     return lockAccountPubkey;
   };
 
-  const generate64ByteUUIDPayload = (): Buffer => {
+  const generate64ByteUUID = (): Buffer => {
     const uuid = uuidv4().replace(/-/g, ""); // 去掉连字符
     const uuidBuffer = Buffer.from(uuid, "hex");
 
@@ -216,7 +216,7 @@ describe("balance-payment", () => {
     );
 
     const nonce = userAccount.nonce;
-    const extraData = generate64ByteUUIDPayload();
+    const extraData = generate64ByteUUID();
 
     const deadline = new BN(Date.now() / 1000 + 60 * 30); // 30 minutes later
     const message = Buffer.concat([
@@ -319,7 +319,7 @@ describe("balance-payment", () => {
     );
 
     const nonce = userAccount.nonce;
-    const extraData = generate64ByteUUIDPayload();
+    const extraData = generate64ByteUUID();
 
     const deadline = new BN(Date.now() / 1000 + 60 * 30); // 30 minutes later
     const message = Buffer.concat([

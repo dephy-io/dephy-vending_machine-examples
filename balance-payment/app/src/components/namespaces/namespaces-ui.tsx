@@ -119,7 +119,6 @@ export function NamespacesUiModal({ hideModal, show, onCreate }: { hideModal: ()
 }
 
 export function NamespacesUiTable({ namespaces }: { namespaces: any[] }) {
-  console.log(namespaces)
   return (
     <div className="space-y-4">
       {namespaces.length === 0 && <div className="text-center py-8 text-gray-500">No namespaces found</div>}
