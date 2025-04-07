@@ -5,21 +5,29 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
+use solana_program::pubkey::Pubkey;
 use borsh::BorshSerialize;
 use borsh::BorshDeserialize;
 
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct LockAccount {
+pub struct NamespaceAccount {
 pub discriminator: [u8; 8],
-pub namespace_id: u64,
-pub amount: u64,
+pub id: u64,
+pub name: String,
+#[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::DisplayFromStr>"))]
+pub authority: Pubkey,
+#[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::DisplayFromStr>"))]
+pub bot: Pubkey,
+#[cfg_attr(feature = "serde", serde(with = "serde_with::As::<serde_with::DisplayFromStr>"))]
+pub treasury: Pubkey,
+pub created_at: i64,
+pub updated_at: i64,
 }
 
 
-impl LockAccount {
-      pub const LEN: usize = 24;
+impl NamespaceAccount {
   
   
   
@@ -30,7 +38,7 @@ impl LockAccount {
   }
 }
 
-impl<'a> TryFrom<&solana_program::account_info::AccountInfo<'a>> for LockAccount {
+impl<'a> TryFrom<&solana_program::account_info::AccountInfo<'a>> for NamespaceAccount {
   type Error = std::io::Error;
 
   fn try_from(account_info: &solana_program::account_info::AccountInfo<'a>) -> Result<Self, Self::Error> {
@@ -40,53 +48,53 @@ impl<'a> TryFrom<&solana_program::account_info::AccountInfo<'a>> for LockAccount
 }
 
 #[cfg(feature = "fetch")]
-pub fn fetch_lock_account(
+pub fn fetch_namespace_account(
   rpc: &solana_client::rpc_client::RpcClient,
   address: &solana_program::pubkey::Pubkey,
-) -> Result<crate::shared::DecodedAccount<LockAccount>, std::io::Error> {
-  let accounts = fetch_all_lock_account(rpc, &[*address])?;
+) -> Result<crate::shared::DecodedAccount<NamespaceAccount>, std::io::Error> {
+  let accounts = fetch_all_namespace_account(rpc, &[*address])?;
   Ok(accounts[0].clone())
 }
 
 #[cfg(feature = "fetch")]
-pub fn fetch_all_lock_account(
+pub fn fetch_all_namespace_account(
   rpc: &solana_client::rpc_client::RpcClient,
   addresses: &[solana_program::pubkey::Pubkey],
-) -> Result<Vec<crate::shared::DecodedAccount<LockAccount>>, std::io::Error> {
+) -> Result<Vec<crate::shared::DecodedAccount<NamespaceAccount>>, std::io::Error> {
     let accounts = rpc.get_multiple_accounts(addresses)
       .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
-    let mut decoded_accounts: Vec<crate::shared::DecodedAccount<LockAccount>> = Vec::new();
+    let mut decoded_accounts: Vec<crate::shared::DecodedAccount<NamespaceAccount>> = Vec::new();
     for i in 0..addresses.len() {
       let address = addresses[i];
       let account = accounts[i].as_ref()
         .ok_or(std::io::Error::new(std::io::ErrorKind::Other, format!("Account not found: {}", address)))?;
-      let data = LockAccount::from_bytes(&account.data)?;
+      let data = NamespaceAccount::from_bytes(&account.data)?;
       decoded_accounts.push(crate::shared::DecodedAccount { address, account: account.clone(), data });
     }
     Ok(decoded_accounts)
 }
 
 #[cfg(feature = "fetch")]
-pub fn fetch_maybe_lock_account(
+pub fn fetch_maybe_namespace_account(
   rpc: &solana_client::rpc_client::RpcClient,
   address: &solana_program::pubkey::Pubkey,
-) -> Result<crate::shared::MaybeAccount<LockAccount>, std::io::Error> {
-    let accounts = fetch_all_maybe_lock_account(rpc, &[*address])?;
+) -> Result<crate::shared::MaybeAccount<NamespaceAccount>, std::io::Error> {
+    let accounts = fetch_all_maybe_namespace_account(rpc, &[*address])?;
     Ok(accounts[0].clone())
 }
 
 #[cfg(feature = "fetch")]
-pub fn fetch_all_maybe_lock_account(
+pub fn fetch_all_maybe_namespace_account(
   rpc: &solana_client::rpc_client::RpcClient,
   addresses: &[solana_program::pubkey::Pubkey],
-) -> Result<Vec<crate::shared::MaybeAccount<LockAccount>>, std::io::Error> {
+) -> Result<Vec<crate::shared::MaybeAccount<NamespaceAccount>>, std::io::Error> {
     let accounts = rpc.get_multiple_accounts(addresses)
       .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
-    let mut decoded_accounts: Vec<crate::shared::MaybeAccount<LockAccount>> = Vec::new();
+    let mut decoded_accounts: Vec<crate::shared::MaybeAccount<NamespaceAccount>> = Vec::new();
     for i in 0..addresses.len() {
       let address = addresses[i];
       if let Some(account) = accounts[i].as_ref() {
-        let data = LockAccount::from_bytes(&account.data)?;
+        let data = NamespaceAccount::from_bytes(&account.data)?;
         decoded_accounts.push(crate::shared::MaybeAccount::Exists(crate::shared::DecodedAccount { address, account: account.clone(), data }));
       } else {
         decoded_accounts.push(crate::shared::MaybeAccount::NotFound(address));
@@ -96,28 +104,28 @@ pub fn fetch_all_maybe_lock_account(
 }
 
   #[cfg(feature = "anchor")]
-  impl anchor_lang::AccountDeserialize for LockAccount {
+  impl anchor_lang::AccountDeserialize for NamespaceAccount {
       fn try_deserialize_unchecked(buf: &mut &[u8]) -> anchor_lang::Result<Self> {
         Ok(Self::deserialize(buf)?)
       }
   }
 
   #[cfg(feature = "anchor")]
-  impl anchor_lang::AccountSerialize for LockAccount {}
+  impl anchor_lang::AccountSerialize for NamespaceAccount {}
 
   #[cfg(feature = "anchor")]
-  impl anchor_lang::Owner for LockAccount {
+  impl anchor_lang::Owner for NamespaceAccount {
       fn owner() -> Pubkey {
         crate::BALANCE_PAYMENT_ID
       }
   }
 
   #[cfg(feature = "anchor-idl-build")]
-  impl anchor_lang::IdlBuild for LockAccount {}
+  impl anchor_lang::IdlBuild for NamespaceAccount {}
 
   
   #[cfg(feature = "anchor-idl-build")]
-  impl anchor_lang::Discriminator for LockAccount {
+  impl anchor_lang::Discriminator for NamespaceAccount {
     const DISCRIMINATOR: [u8; 8] = [0; 8];
   }
 

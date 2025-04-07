@@ -37,6 +37,7 @@ pub enum DephyGachaMessage {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DephyGachaMessageRequestPayload {
+    pub namespace_id: u64,
     pub user: String,
     pub nonce: u64,
     pub recover_info: String,
@@ -44,6 +45,7 @@ pub struct DephyGachaMessageRequestPayload {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DephyGachaMessageStatusPayload {
+    pub namespace_id: u64,
     pub user: String,
     pub nonce: u64,
     pub recover_info: String,

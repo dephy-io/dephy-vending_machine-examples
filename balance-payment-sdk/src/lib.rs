@@ -11,7 +11,8 @@ use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
 pub use error::Error;
-use generated::accounts::GlobalAccount;
+use generated::accounts::LockAccount;
+use generated::accounts::NamespaceAccount;
 use generated::accounts::UserAccount;
 use generated::instructions::Lock;
 use generated::instructions::LockInstructionArgs;
@@ -33,8 +34,6 @@ use solana_sdk::system_program;
 use solana_sdk::transaction::Transaction;
 use verify::verify_signature;
 
-const SIGN_MESSAGE_PREFIX: &[u8; 31] = b"DePHY vending machine/Example:\n";
-
 fn get_client(url: &str) -> RpcClient {
     let timeout = Duration::from_secs(10);
     let commitment_config = CommitmentConfig::processed();
@@ -49,6 +48,7 @@ fn get_client(url: &str) -> RpcClient {
 
 pub async fn check_eligible(
     rpc_url: &str,
+    namespace_id: u64,
     user: &str,
     nonce: u64,
     amount: u64,
@@ -77,6 +77,7 @@ pub async fn check_eligible(
     // 1. concat message
     let message = {
         let mut data = recover_info.payload.to_vec();
+        data.extend_from_slice(&namespace_id.to_le_bytes());
         data.extend_from_slice(&user_account.nonce.to_le_bytes());
         data.extend_from_slice(&recover_info.deadline.to_le_bytes());
         data
@@ -90,8 +91,18 @@ pub async fn check_eligible(
     };
 
     // 3. generate digest
+    let namespace_account_pubkey = Pubkey::find_program_address(
+        &[b"NAMESPACE", &namespace_id.to_be_bytes()],
+        &BALANCE_PAYMENT_ID,
+    )
+    .0;
+    let namespace_account_data = client.get_account_data(&namespace_account_pubkey).await?;
+    let namespace_account: NamespaceAccount =
+        NamespaceAccount::from_bytes(&namespace_account_data)?;
+    let sign_message_prefix = get_sign_message_prefix(namespace_account.name.as_str());
+
     let digest = {
-        let mut data = SIGN_MESSAGE_PREFIX.to_vec();
+        let mut data = sign_message_prefix.to_vec();
         data.extend_from_slice(bs58::encode(&message_hash).into_string().as_bytes());
         data
     };
@@ -141,6 +152,7 @@ pub async fn check_eligible(
 pub async fn lock(
     rpc_url: &str,
     keypair_path: &str,
+    namespace_id: u64,
     user: &str,
     amount: u64,
     recover_info: &str,
@@ -159,7 +171,11 @@ pub async fn lock(
     let user_account = UserAccount::from_bytes(&user_account_data)?;
 
     let lock_instruction = Lock {
-        global_account: Pubkey::find_program_address(&[b"GLOBAL"], &BALANCE_PAYMENT_ID).0,
+        namespace_account: Pubkey::find_program_address(
+            &[b"NAMESPACE", &namespace_id.to_be_bytes()],
+            &BALANCE_PAYMENT_ID,
+        )
+        .0,
         user_account: user_account_pubkey,
         user,
         lock_account: Pubkey::find_program_address(
@@ -177,6 +193,7 @@ pub async fn lock(
 
     let transaction = Transaction::new_signed_with_payer(
         &[lock_instruction.instruction(LockInstructionArgs {
+            namespace_id,
             amount,
             recover_info,
         })],
@@ -204,15 +221,28 @@ pub async fn settle(
 
     let client = get_client(rpc_url);
 
-    let global_account_pubkey = Pubkey::find_program_address(&[b"GLOBAL"], &BALANCE_PAYMENT_ID).0;
-    let global_account_data = client.get_account_data(&global_account_pubkey).await?;
-    let global_account: GlobalAccount = GlobalAccount::from_bytes(&global_account_data)?;
-    let treasury = global_account.treasury;
+    let lock_account_pubkey = Pubkey::find_program_address(
+        &[b"LOCK", user.as_ref(), &nonce.to_le_bytes()],
+        &BALANCE_PAYMENT_ID,
+    )
+    .0;
+    let lock_account_data = client.get_account_data(&lock_account_pubkey).await?;
+    let lock_account: LockAccount = LockAccount::from_bytes(&lock_account_data)?;
+
+    let namespace_account_pubkey = Pubkey::find_program_address(
+        &[b"NAMESPACE", &lock_account.namespace_id.to_be_bytes()],
+        &BALANCE_PAYMENT_ID,
+    )
+    .0;
+    let namespace_account_data = client.get_account_data(&namespace_account_pubkey).await?;
+    let namespace_account: NamespaceAccount =
+        NamespaceAccount::from_bytes(&namespace_account_data)?;
+    let treasury = namespace_account.treasury;
 
     let latest_block = client.get_latest_blockhash().await?;
 
     let settle_instruction = Settle {
-        global_account: global_account_pubkey,
+        namespace_account: namespace_account_pubkey,
         user_account: Pubkey::find_program_address(&[b"USER", user.as_ref()], &BALANCE_PAYMENT_ID)
             .0,
         user,
@@ -246,6 +276,7 @@ pub async fn settle(
 pub async fn pay(
     rpc_url: &str,
     keypair_path: &str,
+    namespace_id: u64,
     user: &str,
     amount_to_transfer: u64,
     recover_info: &str,
@@ -258,15 +289,20 @@ pub async fn pay(
 
     let client = get_client(rpc_url);
 
-    let global_account_pubkey = Pubkey::find_program_address(&[b"GLOBAL"], &BALANCE_PAYMENT_ID).0;
-    let global_account_data = client.get_account_data(&global_account_pubkey).await?;
-    let global_account: GlobalAccount = GlobalAccount::from_bytes(&global_account_data)?;
-    let treasury = global_account.treasury;
+    let namespace_account_pubkey = Pubkey::find_program_address(
+        &[b"NAMESPACE", &namespace_id.to_be_bytes()],
+        &BALANCE_PAYMENT_ID,
+    )
+    .0;
+    let namespace_account_data = client.get_account_data(&namespace_account_pubkey).await?;
+    let namespace_account: NamespaceAccount =
+        NamespaceAccount::from_bytes(&namespace_account_data)?;
+    let treasury = namespace_account.treasury;
 
     let latest_block = client.get_latest_blockhash().await?;
 
     let pay_instruction = Pay {
-        global_account: global_account_pubkey,
+        namespace_account: namespace_account_pubkey,
         user_account: Pubkey::find_program_address(&[b"USER", user.as_ref()], &BALANCE_PAYMENT_ID)
             .0,
         user,
@@ -279,6 +315,7 @@ pub async fn pay(
 
     let transaction = Transaction::new_signed_with_payer(
         &[pay_instruction.instruction(PayInstructionArgs {
+            namespace_id,
             amount_to_transfer,
             recover_info,
         })],
@@ -290,4 +327,9 @@ pub async fn pay(
     let signature = client.send_and_confirm_transaction(&transaction).await?;
 
     Ok(signature.to_string())
+}
+
+pub fn get_sign_message_prefix(namespace_name: &str) -> Vec<u8> {
+    let prefix = format!("DePHY vending machine/{}:\n", namespace_name);
+    prefix.as_bytes().to_vec()
 }

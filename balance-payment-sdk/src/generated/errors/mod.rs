@@ -5,6 +5,7 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
-pub(crate) mod balance_payment;
-
-pub use self::balance_payment::BalancePaymentError;
+      pub(crate) mod balance_payment;
+  
+      pub use self::balance_payment::BalancePaymentError;
+  

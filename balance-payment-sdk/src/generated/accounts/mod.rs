@@ -5,10 +5,13 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
-pub(crate) mod r#global_account;
-pub(crate) mod r#lock_account;
-pub(crate) mod r#user_account;
+  pub(crate) mod r#global_account;
+  pub(crate) mod r#lock_account;
+  pub(crate) mod r#namespace_account;
+  pub(crate) mod r#user_account;
 
-pub use self::r#global_account::*;
-pub use self::r#lock_account::*;
-pub use self::r#user_account::*;
+  pub use self::r#global_account::*;
+  pub use self::r#lock_account::*;
+  pub use self::r#namespace_account::*;
+  pub use self::r#user_account::*;
+

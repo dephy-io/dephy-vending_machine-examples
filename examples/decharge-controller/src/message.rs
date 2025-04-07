@@ -37,6 +37,7 @@ pub enum DephyDechargeMessage {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DephyDechargeMessageRequestPayload {
+    pub namespace_id: u64,
     pub user: String,
     pub nonce: u64,
     pub recover_info: String,
@@ -44,6 +45,7 @@ pub struct DephyDechargeMessageRequestPayload {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DephyDechargeMessageStatusPayload {
+    pub namespace_id: u64,
     pub user: String,
     pub nonce: u64,
     pub recover_info: String,

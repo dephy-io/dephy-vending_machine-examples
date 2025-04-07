@@ -195,6 +195,7 @@ impl MessageHandler {
                 if let Err(e) = dephy_balance_payment_sdk::lock(
                     &self.solana_rpc_url,
                     &self.solana_keypair_path,
+                    parsed_payload.namespace_id,
                     &parsed_payload.user,
                     PREPAID_AMOUNT,
                     &parsed_payload.recover_info,
@@ -204,12 +205,15 @@ impl MessageHandler {
                     tracing::error!("Failed to lock error: {:?} event: {:?}", e, event);
 
                     self.client
-                        .send_event(mention, &DephyDechargeMessage::Request {
-                            to_status: DephyDechargeStatus::Available,
-                            reason: DephyDechargeStatusReason::LockFailed,
-                            initial_request: *initial_request,
-                            payload: payload.to_string(),
-                        })
+                        .send_event(
+                            mention,
+                            &DephyDechargeMessage::Request {
+                                to_status: DephyDechargeStatus::Available,
+                                reason: DephyDechargeStatusReason::LockFailed,
+                                initial_request: *initial_request,
+                                payload: payload.to_string(),
+                            },
+                        )
                         .await?
                 }
             }

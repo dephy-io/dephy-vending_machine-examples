@@ -63,11 +63,14 @@ impl MessageHandler {
         let machines = machine_pubkeys
             .into_iter()
             .map(|pubkey| {
-                (pubkey, Machine {
+                (
                     pubkey,
-                    status: DephyDechargeStatus::Available,
-                    initial_request: None,
-                })
+                    Machine {
+                        pubkey,
+                        status: DephyDechargeStatus::Available,
+                        initial_request: None,
+                    },
+                )
             })
             .collect();
 
@@ -321,6 +324,7 @@ impl MessageHandler {
 
                 match dephy_balance_payment_sdk::check_eligible(
                     &self.solana_rpc_url,
+                    parsed_payload.namespace_id,
                     &parsed_payload.user,
                     parsed_payload.nonce,
                     PREPAID_AMOUNT,
@@ -345,16 +349,20 @@ impl MessageHandler {
                 }
 
                 self.client
-                    .send_event(mention, &DephyDechargeMessage::Status {
-                        status: *to_status,
-                        reason: *reason,
-                        initial_request: event.id,
-                        payload: serde_json::to_string(&DephyDechargeMessageStatusPayload {
-                            user: parsed_payload.user.clone(),
-                            nonce: parsed_payload.nonce,
-                            recover_info: parsed_payload.recover_info.clone(),
-                        })?,
-                    })
+                    .send_event(
+                        mention,
+                        &DephyDechargeMessage::Status {
+                            status: *to_status,
+                            reason: *reason,
+                            initial_request: event.id,
+                            payload: serde_json::to_string(&DephyDechargeMessageStatusPayload {
+                                namespace_id: parsed_payload.namespace_id,
+                                user: parsed_payload.user.clone(),
+                                nonce: parsed_payload.nonce,
+                                recover_info: parsed_payload.recover_info.clone(),
+                            })?,
+                        },
+                    )
                     .await?;
 
                 // TODO: Should check this by machine api
@@ -365,19 +373,23 @@ impl MessageHandler {
                     tokio::spawn(async move {
                         tokio::time::sleep(std::time::Duration::from_secs(60)).await;
                         client
-                            .send_event(&mention, &DephyDechargeMessage::Status {
-                                status: DephyDechargeStatus::Available,
-                                reason: DephyDechargeStatusReason::UserBehaviour,
-                                initial_request: event_id,
-                                payload: serde_json::to_string(
-                                    &DephyDechargeMessageStatusPayload {
-                                        user: parsed_payload.user.clone(),
-                                        nonce: parsed_payload.nonce,
-                                        recover_info: parsed_payload.recover_info,
-                                    },
-                                )
-                                .unwrap(),
-                            })
+                            .send_event(
+                                &mention,
+                                &DephyDechargeMessage::Status {
+                                    status: DephyDechargeStatus::Available,
+                                    reason: DephyDechargeStatusReason::UserBehaviour,
+                                    initial_request: event_id,
+                                    payload: serde_json::to_string(
+                                        &DephyDechargeMessageStatusPayload {
+                                            namespace_id: parsed_payload.namespace_id,
+                                            user: parsed_payload.user.clone(),
+                                            nonce: parsed_payload.nonce,
+                                            recover_info: parsed_payload.recover_info,
+                                        },
+                                    )
+                                    .unwrap(),
+                                },
+                            )
                             .await
                             .unwrap();
                     });

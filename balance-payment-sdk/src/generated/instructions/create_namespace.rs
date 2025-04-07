@@ -5,28 +5,24 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
-use crate::generated::types::ED25519RecoverInfo;
 use borsh::BorshSerialize;
 use borsh::BorshDeserialize;
 
 /// Accounts.
 #[derive(Debug)]
-pub struct Lock {
+pub struct CreateNamespace {
       
+              
+          pub global_account: solana_program::pubkey::Pubkey,
+          
               
           pub namespace_account: solana_program::pubkey::Pubkey,
           
               
-          pub user_account: solana_program::pubkey::Pubkey,
+          pub authority: solana_program::pubkey::Pubkey,
           
               
-          pub user: solana_program::pubkey::Pubkey,
-          
-              
-          pub lock_account: solana_program::pubkey::Pubkey,
-          
-              
-          pub vault: solana_program::pubkey::Pubkey,
+          pub treasury: solana_program::pubkey::Pubkey,
           
               
           pub bot: solana_program::pubkey::Pubkey,
@@ -38,37 +34,33 @@ pub struct Lock {
           pub system_program: solana_program::pubkey::Pubkey,
       }
 
-impl Lock {
-  pub fn instruction(&self, args: LockInstructionArgs) -> solana_program::instruction::Instruction {
+impl CreateNamespace {
+  pub fn instruction(&self, args: CreateNamespaceInstructionArgs) -> solana_program::instruction::Instruction {
     self.instruction_with_remaining_accounts(args, &[])
   }
   #[allow(clippy::arithmetic_side_effects)]
   #[allow(clippy::vec_init_then_push)]
-  pub fn instruction_with_remaining_accounts(&self, args: LockInstructionArgs, remaining_accounts: &[solana_program::instruction::AccountMeta]) -> solana_program::instruction::Instruction {
-    let mut accounts = Vec::with_capacity(8+ remaining_accounts.len());
-                            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+  pub fn instruction_with_remaining_accounts(&self, args: CreateNamespaceInstructionArgs, remaining_accounts: &[solana_program::instruction::AccountMeta]) -> solana_program::instruction::Instruction {
+    let mut accounts = Vec::with_capacity(7+ remaining_accounts.len());
+                            accounts.push(solana_program::instruction::AccountMeta::new(
+            self.global_account,
+            false
+          ));
+                                          accounts.push(solana_program::instruction::AccountMeta::new(
             self.namespace_account,
             false
           ));
-                                          accounts.push(solana_program::instruction::AccountMeta::new(
-            self.user_account,
-            false
-          ));
-                                          accounts.push(solana_program::instruction::AccountMeta::new(
-            self.user,
-            false
-          ));
-                                          accounts.push(solana_program::instruction::AccountMeta::new(
-            self.lock_account,
+                                          accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            self.authority,
             false
           ));
                                           accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            self.vault,
+            self.treasury,
             false
           ));
                                           accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             self.bot,
-            true
+            false
           ));
                                           accounts.push(solana_program::instruction::AccountMeta::new(
             self.payer,
@@ -79,7 +71,7 @@ impl Lock {
             false
           ));
                       accounts.extend_from_slice(remaining_accounts);
-    let mut data = borsh::to_vec(&LockInstructionData::new()).unwrap();
+    let mut data = borsh::to_vec(&CreateNamespaceInstructionData::new()).unwrap();
           let mut args = borsh::to_vec(&args).unwrap();
       data.append(&mut args);
     
@@ -93,19 +85,19 @@ impl Lock {
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
- pub struct LockInstructionData {
+ pub struct CreateNamespaceInstructionData {
             discriminator: [u8; 8],
-                        }
+            }
 
-impl LockInstructionData {
+impl CreateNamespaceInstructionData {
   pub fn new() -> Self {
     Self {
-                        discriminator: [21, 19, 208, 43, 237, 62, 255, 87],
-                                                            }
+                        discriminator: [205, 189, 35, 255, 214, 116, 25, 107],
+                                }
   }
 }
 
-impl Default for LockInstructionData {
+impl Default for CreateNamespaceInstructionData {
   fn default() -> Self {
     Self::new()
   }
@@ -113,68 +105,57 @@ impl Default for LockInstructionData {
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
- pub struct LockInstructionArgs {
-                  pub namespace_id: u64,
-                pub recover_info: ED25519RecoverInfo,
-                pub amount: u64,
+ pub struct CreateNamespaceInstructionArgs {
+                  pub name: String,
       }
 
 
-/// Instruction builder for `Lock`.
+/// Instruction builder for `CreateNamespace`.
 ///
 /// ### Accounts:
 ///
-          ///   0. `[]` namespace_account
-                ///   1. `[writable]` user_account
-                ///   2. `[writable]` user
-                ///   3. `[writable]` lock_account
-          ///   4. `[]` vault
-                ///   5. `[signer]` bot
-                      ///   6. `[writable, signer]` payer
-                ///   7. `[optional]` system_program (default to `11111111111111111111111111111111`)
+                ///   0. `[writable]` global_account
+                ///   1. `[writable]` namespace_account
+          ///   2. `[]` authority
+          ///   3. `[]` treasury
+          ///   4. `[]` bot
+                      ///   5. `[writable, signer]` payer
+                ///   6. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
-pub struct LockBuilder {
-            namespace_account: Option<solana_program::pubkey::Pubkey>,
-                user_account: Option<solana_program::pubkey::Pubkey>,
-                user: Option<solana_program::pubkey::Pubkey>,
-                lock_account: Option<solana_program::pubkey::Pubkey>,
-                vault: Option<solana_program::pubkey::Pubkey>,
+pub struct CreateNamespaceBuilder {
+            global_account: Option<solana_program::pubkey::Pubkey>,
+                namespace_account: Option<solana_program::pubkey::Pubkey>,
+                authority: Option<solana_program::pubkey::Pubkey>,
+                treasury: Option<solana_program::pubkey::Pubkey>,
                 bot: Option<solana_program::pubkey::Pubkey>,
                 payer: Option<solana_program::pubkey::Pubkey>,
                 system_program: Option<solana_program::pubkey::Pubkey>,
-                        namespace_id: Option<u64>,
-                recover_info: Option<ED25519RecoverInfo>,
-                amount: Option<u64>,
+                        name: Option<String>,
         __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
 
-impl LockBuilder {
+impl CreateNamespaceBuilder {
   pub fn new() -> Self {
     Self::default()
   }
+            #[inline(always)]
+    pub fn global_account(&mut self, global_account: solana_program::pubkey::Pubkey) -> &mut Self {
+                        self.global_account = Some(global_account);
+                    self
+    }
             #[inline(always)]
     pub fn namespace_account(&mut self, namespace_account: solana_program::pubkey::Pubkey) -> &mut Self {
                         self.namespace_account = Some(namespace_account);
                     self
     }
             #[inline(always)]
-    pub fn user_account(&mut self, user_account: solana_program::pubkey::Pubkey) -> &mut Self {
-                        self.user_account = Some(user_account);
+    pub fn authority(&mut self, authority: solana_program::pubkey::Pubkey) -> &mut Self {
+                        self.authority = Some(authority);
                     self
     }
             #[inline(always)]
-    pub fn user(&mut self, user: solana_program::pubkey::Pubkey) -> &mut Self {
-                        self.user = Some(user);
-                    self
-    }
-            #[inline(always)]
-    pub fn lock_account(&mut self, lock_account: solana_program::pubkey::Pubkey) -> &mut Self {
-                        self.lock_account = Some(lock_account);
-                    self
-    }
-            #[inline(always)]
-    pub fn vault(&mut self, vault: solana_program::pubkey::Pubkey) -> &mut Self {
-                        self.vault = Some(vault);
+    pub fn treasury(&mut self, treasury: solana_program::pubkey::Pubkey) -> &mut Self {
+                        self.treasury = Some(treasury);
                     self
     }
             #[inline(always)]
@@ -194,18 +175,8 @@ impl LockBuilder {
                     self
     }
                     #[inline(always)]
-      pub fn namespace_id(&mut self, namespace_id: u64) -> &mut Self {
-        self.namespace_id = Some(namespace_id);
-        self
-      }
-                #[inline(always)]
-      pub fn recover_info(&mut self, recover_info: ED25519RecoverInfo) -> &mut Self {
-        self.recover_info = Some(recover_info);
-        self
-      }
-                #[inline(always)]
-      pub fn amount(&mut self, amount: u64) -> &mut Self {
-        self.amount = Some(amount);
+      pub fn name(&mut self, name: String) -> &mut Self {
+        self.name = Some(name);
         self
       }
         /// Add an additional account to the instruction.
@@ -222,43 +193,37 @@ impl LockBuilder {
   }
   #[allow(clippy::clone_on_copy)]
   pub fn instruction(&self) -> solana_program::instruction::Instruction {
-    let accounts = Lock {
-                              namespace_account: self.namespace_account.expect("namespace_account is not set"),
-                                        user_account: self.user_account.expect("user_account is not set"),
-                                        user: self.user.expect("user is not set"),
-                                        lock_account: self.lock_account.expect("lock_account is not set"),
-                                        vault: self.vault.expect("vault is not set"),
+    let accounts = CreateNamespace {
+                              global_account: self.global_account.expect("global_account is not set"),
+                                        namespace_account: self.namespace_account.expect("namespace_account is not set"),
+                                        authority: self.authority.expect("authority is not set"),
+                                        treasury: self.treasury.expect("treasury is not set"),
                                         bot: self.bot.expect("bot is not set"),
                                         payer: self.payer.expect("payer is not set"),
                                         system_program: self.system_program.unwrap_or(solana_program::pubkey!("11111111111111111111111111111111")),
                       };
-          let args = LockInstructionArgs {
-                                                              namespace_id: self.namespace_id.clone().expect("namespace_id is not set"),
-                                                                  recover_info: self.recover_info.clone().expect("recover_info is not set"),
-                                                                  amount: self.amount.clone().expect("amount is not set"),
+          let args = CreateNamespaceInstructionArgs {
+                                                              name: self.name.clone().expect("name is not set"),
                                     };
     
     accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
   }
 }
 
-  /// `lock` CPI accounts.
-  pub struct LockCpiAccounts<'a, 'b> {
+  /// `create_namespace` CPI accounts.
+  pub struct CreateNamespaceCpiAccounts<'a, 'b> {
           
+                    
+              pub global_account: &'b solana_program::account_info::AccountInfo<'a>,
+                
                     
               pub namespace_account: &'b solana_program::account_info::AccountInfo<'a>,
                 
                     
-              pub user_account: &'b solana_program::account_info::AccountInfo<'a>,
+              pub authority: &'b solana_program::account_info::AccountInfo<'a>,
                 
                     
-              pub user: &'b solana_program::account_info::AccountInfo<'a>,
-                
-                    
-              pub lock_account: &'b solana_program::account_info::AccountInfo<'a>,
-                
-                    
-              pub vault: &'b solana_program::account_info::AccountInfo<'a>,
+              pub treasury: &'b solana_program::account_info::AccountInfo<'a>,
                 
                     
               pub bot: &'b solana_program::account_info::AccountInfo<'a>,
@@ -270,25 +235,22 @@ impl LockBuilder {
               pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
             }
 
-/// `lock` CPI instruction.
-pub struct LockCpi<'a, 'b> {
+/// `create_namespace` CPI instruction.
+pub struct CreateNamespaceCpi<'a, 'b> {
   /// The program to invoke.
   pub __program: &'b solana_program::account_info::AccountInfo<'a>,
       
               
+          pub global_account: &'b solana_program::account_info::AccountInfo<'a>,
+          
+              
           pub namespace_account: &'b solana_program::account_info::AccountInfo<'a>,
           
               
-          pub user_account: &'b solana_program::account_info::AccountInfo<'a>,
+          pub authority: &'b solana_program::account_info::AccountInfo<'a>,
           
               
-          pub user: &'b solana_program::account_info::AccountInfo<'a>,
-          
-              
-          pub lock_account: &'b solana_program::account_info::AccountInfo<'a>,
-          
-              
-          pub vault: &'b solana_program::account_info::AccountInfo<'a>,
+          pub treasury: &'b solana_program::account_info::AccountInfo<'a>,
           
               
           pub bot: &'b solana_program::account_info::AccountInfo<'a>,
@@ -299,22 +261,21 @@ pub struct LockCpi<'a, 'b> {
               
           pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
             /// The arguments for the instruction.
-    pub __args: LockInstructionArgs,
+    pub __args: CreateNamespaceInstructionArgs,
   }
 
-impl<'a, 'b> LockCpi<'a, 'b> {
+impl<'a, 'b> CreateNamespaceCpi<'a, 'b> {
   pub fn new(
     program: &'b solana_program::account_info::AccountInfo<'a>,
-          accounts: LockCpiAccounts<'a, 'b>,
-              args: LockInstructionArgs,
+          accounts: CreateNamespaceCpiAccounts<'a, 'b>,
+              args: CreateNamespaceInstructionArgs,
       ) -> Self {
     Self {
       __program: program,
+              global_account: accounts.global_account,
               namespace_account: accounts.namespace_account,
-              user_account: accounts.user_account,
-              user: accounts.user,
-              lock_account: accounts.lock_account,
-              vault: accounts.vault,
+              authority: accounts.authority,
+              treasury: accounts.treasury,
               bot: accounts.bot,
               payer: accounts.payer,
               system_program: accounts.system_program,
@@ -341,30 +302,26 @@ impl<'a, 'b> LockCpi<'a, 'b> {
     signers_seeds: &[&[&[u8]]],
     remaining_accounts: &[(&'b solana_program::account_info::AccountInfo<'a>, bool, bool)]
   ) -> solana_program::entrypoint::ProgramResult {
-    let mut accounts = Vec::with_capacity(8+ remaining_accounts.len());
-                            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+    let mut accounts = Vec::with_capacity(7+ remaining_accounts.len());
+                            accounts.push(solana_program::instruction::AccountMeta::new(
+            *self.global_account.key,
+            false
+          ));
+                                          accounts.push(solana_program::instruction::AccountMeta::new(
             *self.namespace_account.key,
             false
           ));
-                                          accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.user_account.key,
-            false
-          ));
-                                          accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.user.key,
-            false
-          ));
-                                          accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.lock_account.key,
+                                          accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            *self.authority.key,
             false
           ));
                                           accounts.push(solana_program::instruction::AccountMeta::new_readonly(
-            *self.vault.key,
+            *self.treasury.key,
             false
           ));
                                           accounts.push(solana_program::instruction::AccountMeta::new_readonly(
             *self.bot.key,
-            true
+            false
           ));
                                           accounts.push(solana_program::instruction::AccountMeta::new(
             *self.payer.key,
@@ -381,7 +338,7 @@ impl<'a, 'b> LockCpi<'a, 'b> {
           is_writable: remaining_account.2,
       })
     });
-    let mut data = borsh::to_vec(&LockInstructionData::new()).unwrap();
+    let mut data = borsh::to_vec(&CreateNamespaceInstructionData::new()).unwrap();
           let mut args = borsh::to_vec(&self.__args).unwrap();
       data.append(&mut args);
     
@@ -390,13 +347,12 @@ impl<'a, 'b> LockCpi<'a, 'b> {
       accounts,
       data,
     };
-    let mut account_infos = Vec::with_capacity(9 + remaining_accounts.len());
+    let mut account_infos = Vec::with_capacity(8 + remaining_accounts.len());
     account_infos.push(self.__program.clone());
-                  account_infos.push(self.namespace_account.clone());
-                        account_infos.push(self.user_account.clone());
-                        account_infos.push(self.user.clone());
-                        account_infos.push(self.lock_account.clone());
-                        account_infos.push(self.vault.clone());
+                  account_infos.push(self.global_account.clone());
+                        account_infos.push(self.namespace_account.clone());
+                        account_infos.push(self.authority.clone());
+                        account_infos.push(self.treasury.clone());
                         account_infos.push(self.bot.clone());
                         account_infos.push(self.payer.clone());
                         account_infos.push(self.system_program.clone());
@@ -410,65 +366,56 @@ impl<'a, 'b> LockCpi<'a, 'b> {
   }
 }
 
-/// Instruction builder for `Lock` via CPI.
+/// Instruction builder for `CreateNamespace` via CPI.
 ///
 /// ### Accounts:
 ///
-          ///   0. `[]` namespace_account
-                ///   1. `[writable]` user_account
-                ///   2. `[writable]` user
-                ///   3. `[writable]` lock_account
-          ///   4. `[]` vault
-                ///   5. `[signer]` bot
-                      ///   6. `[writable, signer]` payer
-          ///   7. `[]` system_program
+                ///   0. `[writable]` global_account
+                ///   1. `[writable]` namespace_account
+          ///   2. `[]` authority
+          ///   3. `[]` treasury
+          ///   4. `[]` bot
+                      ///   5. `[writable, signer]` payer
+          ///   6. `[]` system_program
 #[derive(Clone, Debug)]
-pub struct LockCpiBuilder<'a, 'b> {
-  instruction: Box<LockCpiBuilderInstruction<'a, 'b>>,
+pub struct CreateNamespaceCpiBuilder<'a, 'b> {
+  instruction: Box<CreateNamespaceCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> LockCpiBuilder<'a, 'b> {
+impl<'a, 'b> CreateNamespaceCpiBuilder<'a, 'b> {
   pub fn new(program: &'b solana_program::account_info::AccountInfo<'a>) -> Self {
-    let instruction = Box::new(LockCpiBuilderInstruction {
+    let instruction = Box::new(CreateNamespaceCpiBuilderInstruction {
       __program: program,
+              global_account: None,
               namespace_account: None,
-              user_account: None,
-              user: None,
-              lock_account: None,
-              vault: None,
+              authority: None,
+              treasury: None,
               bot: None,
               payer: None,
               system_program: None,
-                                            namespace_id: None,
-                                recover_info: None,
-                                amount: None,
+                                            name: None,
                     __remaining_accounts: Vec::new(),
     });
     Self { instruction }
   }
+      #[inline(always)]
+    pub fn global_account(&mut self, global_account: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
+                        self.instruction.global_account = Some(global_account);
+                    self
+    }
       #[inline(always)]
     pub fn namespace_account(&mut self, namespace_account: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
                         self.instruction.namespace_account = Some(namespace_account);
                     self
     }
       #[inline(always)]
-    pub fn user_account(&mut self, user_account: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
-                        self.instruction.user_account = Some(user_account);
+    pub fn authority(&mut self, authority: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
+                        self.instruction.authority = Some(authority);
                     self
     }
       #[inline(always)]
-    pub fn user(&mut self, user: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
-                        self.instruction.user = Some(user);
-                    self
-    }
-      #[inline(always)]
-    pub fn lock_account(&mut self, lock_account: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
-                        self.instruction.lock_account = Some(lock_account);
-                    self
-    }
-      #[inline(always)]
-    pub fn vault(&mut self, vault: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
-                        self.instruction.vault = Some(vault);
+    pub fn treasury(&mut self, treasury: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
+                        self.instruction.treasury = Some(treasury);
                     self
     }
       #[inline(always)]
@@ -487,18 +434,8 @@ impl<'a, 'b> LockCpiBuilder<'a, 'b> {
                     self
     }
                     #[inline(always)]
-      pub fn namespace_id(&mut self, namespace_id: u64) -> &mut Self {
-        self.instruction.namespace_id = Some(namespace_id);
-        self
-      }
-                #[inline(always)]
-      pub fn recover_info(&mut self, recover_info: ED25519RecoverInfo) -> &mut Self {
-        self.instruction.recover_info = Some(recover_info);
-        self
-      }
-                #[inline(always)]
-      pub fn amount(&mut self, amount: u64) -> &mut Self {
-        self.instruction.amount = Some(amount);
+      pub fn name(&mut self, name: String) -> &mut Self {
+        self.instruction.name = Some(name);
         self
       }
         /// Add an additional account to the instruction.
@@ -523,23 +460,19 @@ impl<'a, 'b> LockCpiBuilder<'a, 'b> {
   #[allow(clippy::clone_on_copy)]
   #[allow(clippy::vec_init_then_push)]
   pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program::entrypoint::ProgramResult {
-          let args = LockInstructionArgs {
-                                                              namespace_id: self.instruction.namespace_id.clone().expect("namespace_id is not set"),
-                                                                  recover_info: self.instruction.recover_info.clone().expect("recover_info is not set"),
-                                                                  amount: self.instruction.amount.clone().expect("amount is not set"),
+          let args = CreateNamespaceInstructionArgs {
+                                                              name: self.instruction.name.clone().expect("name is not set"),
                                     };
-        let instruction = LockCpi {
+        let instruction = CreateNamespaceCpi {
         __program: self.instruction.__program,
+                  
+          global_account: self.instruction.global_account.expect("global_account is not set"),
                   
           namespace_account: self.instruction.namespace_account.expect("namespace_account is not set"),
                   
-          user_account: self.instruction.user_account.expect("user_account is not set"),
+          authority: self.instruction.authority.expect("authority is not set"),
                   
-          user: self.instruction.user.expect("user is not set"),
-                  
-          lock_account: self.instruction.lock_account.expect("lock_account is not set"),
-                  
-          vault: self.instruction.vault.expect("vault is not set"),
+          treasury: self.instruction.treasury.expect("treasury is not set"),
                   
           bot: self.instruction.bot.expect("bot is not set"),
                   
@@ -553,19 +486,16 @@ impl<'a, 'b> LockCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct LockCpiBuilderInstruction<'a, 'b> {
+struct CreateNamespaceCpiBuilderInstruction<'a, 'b> {
   __program: &'b solana_program::account_info::AccountInfo<'a>,
-            namespace_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-                user_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-                user: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-                lock_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-                vault: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+            global_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+                namespace_account: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+                authority: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+                treasury: Option<&'b solana_program::account_info::AccountInfo<'a>>,
                 bot: Option<&'b solana_program::account_info::AccountInfo<'a>>,
                 payer: Option<&'b solana_program::account_info::AccountInfo<'a>>,
                 system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-                        namespace_id: Option<u64>,
-                recover_info: Option<ED25519RecoverInfo>,
-                amount: Option<u64>,
+                        name: Option<String>,
         /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
   __remaining_accounts: Vec<(&'b solana_program::account_info::AccountInfo<'a>, bool, bool)>,
 }
