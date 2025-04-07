@@ -110,11 +110,7 @@ impl RelayClient {
         Ok(output.id().clone())
     }
 
-    pub async fn subscribe<I>(
-        &self,
-        since: Timestamp,
-        mentions: I,
-    ) -> Result<SubscriptionId, Error>
+    pub async fn subscribe<I>(&self, since: Timestamp, mentions: I) -> Result<SubscriptionId, Error>
     where
         I: IntoIterator<Item = PublicKey>,
     {
@@ -144,7 +140,9 @@ impl RelayClient {
     }
 
     pub async fn send_event<M>(&self, to: &str, message: &M) -> Result<(), Error>
-    where M: serde::Serialize + std::fmt::Debug {
+    where
+        M: serde::Serialize + std::fmt::Debug,
+    {
         let content = serde_json::to_string(message)?;
 
         let event_builder = EventBuilder::new(EVENT_KIND, content).tags([

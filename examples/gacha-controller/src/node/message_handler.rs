@@ -327,6 +327,7 @@ impl MessageHandler {
                 if let Err(e) = dephy_balance_payment_sdk::pay(
                     &self.solana_rpc_url,
                     &self.solana_keypair_path,
+                    parsed_payload.namespace_id,
                     &parsed_payload.user,
                     PAY_AMOUNT,
                     &parsed_payload.recover_info,
@@ -345,6 +346,7 @@ impl MessageHandler {
                             reason: *reason,
                             initial_request: event.id,
                             payload: serde_json::to_string(&DephyGachaMessageStatusPayload {
+                                namespace_id: parsed_payload.namespace_id,
                                 user: parsed_payload.user.clone(),
                                 nonce: parsed_payload.nonce,
                                 recover_info: parsed_payload.recover_info.clone(),
@@ -369,6 +371,7 @@ impl MessageHandler {
                                     initial_request: event_id,
                                     payload: serde_json::to_string(
                                         &DephyGachaMessageStatusPayload {
+                                            namespace_id: parsed_payload.namespace_id,
                                             user: parsed_payload.user.clone(),
                                             nonce: parsed_payload.nonce,
                                             recover_info: parsed_payload.recover_info,

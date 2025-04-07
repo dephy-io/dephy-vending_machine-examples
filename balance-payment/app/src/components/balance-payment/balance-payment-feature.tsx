@@ -32,7 +32,7 @@ export default function BalancePaymentFeature() {
   const [serialNumberStr, setSerialNumberStr] = useState<string | null>(null)
   const [serialNumberBytes, setSerialNumberBytes] = useState<Uint8Array | null>(null)
   const [globalAccount, setGlobalAccount] = useState<any>(null)
-  const [namespaceId, setNamespaceId] = useState<any>(new BN(0))
+  const [namespaceId, setNamespaceId] = useState<BN>(new BN(0))
   const [namespaceAccount, setNamespaceAccount] = useState<any>(null)
   const [userAccount, setUserAccount] = useState<any>(null)
   const [vaultBalance, setVaultBalance] = useState<number | null>(null)
@@ -251,11 +251,11 @@ export default function BalancePaymentFeature() {
     const user = await program.account.userAccount.fetch(userAccountPubkey)
 
     const nonce = user.nonce
-    const payload = serialNumberBytes
+    const recoverInfoPayload = serialNumberBytes
     const deadline = new BN(Date.now() / 1000 + 60 * 30) // 30 minutes later
 
     const message = Buffer.concat([
-      payload,
+      serialNumberBytes,
       namespaceId.toArrayLike(Buffer, 'le', 8),
       nonce.toArrayLike(Buffer, 'le', 8),
       deadline.toArrayLike(Buffer, 'le', 8),
@@ -270,7 +270,7 @@ export default function BalancePaymentFeature() {
       const signature = await signMessage(digest)
       recoverInfo = {
         signature: Array.from(signature),
-        payload: Array.from(payload),
+        payload: Array.from(recoverInfoPayload),
         deadline: deadline.toNumber(),
       }
       setRecoverInfo(recoverInfo)
@@ -343,6 +343,7 @@ export default function BalancePaymentFeature() {
 
     const payload = JSON.stringify({
       recover_info: JSON.stringify(recoverInfo),
+      namespace_id: namespaceId.toNumber(),
       nonce,
       user,
     })
@@ -565,7 +566,6 @@ export default function BalancePaymentFeature() {
 
   return publicKey ? (
     <div className="max-w-4xl mx-auto p-4">
-      <div>Namespace: {namespaceAccount?.name}</div>
       {/* Tab */}
       <div className="inline-flex p-1 bg-gray-100 rounded-full mb-8">
         <button

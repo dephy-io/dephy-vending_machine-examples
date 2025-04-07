@@ -5,6 +5,7 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
-pub(crate) mod r#e_d25519_recover_info;
+  pub(crate) mod r#e_d25519_recover_info;
 
-pub use self::r#e_d25519_recover_info::*;
+  pub use self::r#e_d25519_recover_info::*;
+
