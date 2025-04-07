@@ -1,7 +1,7 @@
 use crate::{
-    constants::{self, DISCRIMINATOR_SIZE},
+    constants::DISCRIMINATOR_SIZE,
     errors::CustomError,
-    state::{NamespaceAccount, LockAccount, UserAccount},
+    state::{LockAccount, NamespaceAccount, UserAccount},
     utils,
 };
 use anchor_lang::{prelude::*, solana_program::keccak};
@@ -13,10 +13,16 @@ pub fn lock(
     recover_info: ED25519RecoverInfo,
     amount: u64,
 ) -> Result<()> {
+    let namespace_account = &ctx.accounts.namespace_account;
     let user_account = &mut ctx.accounts.user_account;
     let lock_account = &mut ctx.accounts.lock_account;
 
-    recover_info.verify(namespace_id, user_account.nonce, &ctx.accounts.user.key())?;
+    recover_info.verify(
+        namespace_id,
+        namespace_account.name.clone(),
+        user_account.nonce,
+        &ctx.accounts.user.key(),
+    )?;
 
     require!(
         ctx.accounts.vault.get_lamports() - user_account.locked_amount >= amount,
@@ -25,7 +31,7 @@ pub fn lock(
 
     user_account.nonce += 1;
     user_account.locked_amount += amount;
-    
+
     lock_account.namespace_id = namespace_id;
     lock_account.amount = amount;
 
@@ -67,7 +73,13 @@ pub struct ED25519RecoverInfo {
 }
 
 impl ED25519RecoverInfo {
-    pub fn verify(&self, namespace_id: u64, nonce: u64, pubkey: &Pubkey) -> Result<()> {
+    pub fn verify(
+        &self,
+        namespace_id: u64,
+        namespace_name: String,
+        nonce: u64,
+        pubkey: &Pubkey,
+    ) -> Result<()> {
         let message = {
             let mut data = self.payload.to_vec();
             data.extend_from_slice(&namespace_id.to_le_bytes());
@@ -84,8 +96,9 @@ impl ED25519RecoverInfo {
 
         let hashed_message_base58 = bs58::encode(&hashed_message).into_vec();
 
+        let sign_message_prefix = utils::get_sign_message_prefix(namespace_name.as_ref());
         let digest = {
-            let mut data = constants::SIGN_MESSAGE_PREFIX.to_vec();
+            let mut data = sign_message_prefix.to_vec();
             data.extend_from_slice(&hashed_message_base58);
             data
         };

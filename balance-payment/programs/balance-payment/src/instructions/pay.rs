@@ -12,9 +12,15 @@ pub fn pay(
     recover_info: ED25519RecoverInfo,
     amount_to_transfer: u64,
 ) -> Result<()> {
+    let namespace_account = &ctx.accounts.namespace_account;
     let user_account = &mut ctx.accounts.user_account;
 
-    recover_info.verify(namespace_id, user_account.nonce, &ctx.accounts.user.key())?;
+    recover_info.verify(
+        namespace_id,
+        namespace_account.name.clone(),
+        user_account.nonce,
+        &ctx.accounts.user.key(),
+    )?;
 
     require!(
         ctx.accounts.vault.get_lamports() - user_account.locked_amount >= amount_to_transfer,
