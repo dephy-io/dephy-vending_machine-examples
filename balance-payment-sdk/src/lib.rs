@@ -92,7 +92,7 @@ pub async fn check_eligible(
 
     // 3. generate digest
     let namespace_account_pubkey = Pubkey::find_program_address(
-        &[b"NAMESPACE", &namespace_id.to_be_bytes()],
+        &[b"NAMESPACE", &namespace_id.to_le_bytes()],
         &BALANCE_PAYMENT_ID,
     )
     .0;
@@ -172,7 +172,7 @@ pub async fn lock(
 
     let lock_instruction = Lock {
         namespace_account: Pubkey::find_program_address(
-            &[b"NAMESPACE", &namespace_id.to_be_bytes()],
+            &[b"NAMESPACE", &namespace_id.to_le_bytes()],
             &BALANCE_PAYMENT_ID,
         )
         .0,
@@ -230,7 +230,7 @@ pub async fn settle(
     let lock_account: LockAccount = LockAccount::from_bytes(&lock_account_data)?;
 
     let namespace_account_pubkey = Pubkey::find_program_address(
-        &[b"NAMESPACE", &lock_account.namespace_id.to_be_bytes()],
+        &[b"NAMESPACE", &lock_account.namespace_id.to_le_bytes()],
         &BALANCE_PAYMENT_ID,
     )
     .0;
@@ -290,7 +290,7 @@ pub async fn pay(
     let client = get_client(rpc_url);
 
     let namespace_account_pubkey = Pubkey::find_program_address(
-        &[b"NAMESPACE", &namespace_id.to_be_bytes()],
+        &[b"NAMESPACE", &namespace_id.to_le_bytes()],
         &BALANCE_PAYMENT_ID,
     )
     .0;
