@@ -293,14 +293,6 @@ impl MessageHandler {
                 }
 
                 if *to_status == DephyDechargeStatus::Available {
-                    if *reason == DephyDechargeStatusReason::UserRequest {
-                        tracing::error!(
-                            "User cannot manually stop machine, skip event: {:?}",
-                            event
-                        );
-                        return Ok(());
-                    }
-
                     if let Some(ref original_request) = machine.initial_request {
                         if original_request != initial_request {
                             tracing::error!(
